@@ -1,1 +1,1 @@
-worker: BruhBot.py
+worker: main.py
