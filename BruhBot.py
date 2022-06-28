@@ -70,7 +70,7 @@ async def on_message(message: discord.Message):
         for _ in range(3):
           await message.channel.send(msg)
     
-  #  print(message.content)
-  #  await message.channel.send(message.content)
+    #print(message.content)
+    #await message.channel.send(message.content)
 
 client.run(TOKEN)
