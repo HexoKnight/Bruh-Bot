@@ -1,9 +1,11 @@
 import asyncio
 import math
 import discord
-from discord import FFmpegPCMAudio, app_commands
+from discord import FFmpegPCMAudio, Interaction, app_commands
+from discord.ext import commands
 import random as r
 import datetime
+import traceback
 
 TOKEN = "OTkxMjgxMzMzOTE5ODMwMDQ2.GCjxv3.bZweE0DTGyx2eSwDpyPYV9SrYEqK3HWZM8ZPMY"
 TheGroup_id = 761690744703942706
@@ -31,19 +33,20 @@ tree = app_commands.CommandTree(client)
 @tree.command(name = "bruh", description = "bruh", guild = discord.Object(TheGroup_id))
 async def bruh(interaction: discord.Interaction, length: int, secret: bool = False):
   try:
-    a = 1 / 0
+    aclength = length
+    acsecret = secret
     extra = ""
-    if length == 0:
+    if aclength == 0:
       extra += " wut"
-    elif length > 1000:
-      length = 1000
+    elif aclength > 1000:
+      aclength = 1000
       extra += "\nlimited to 1000 or the bot breaks :/"
 
-    if not secret:
+    if not acsecret:
       if interaction.user.id in bruhUses and (timeElapsed := datetime.datetime.now() - bruhUses[interaction.user.id]["time"]).seconds < bruhUses[interaction.user.id]["delay"]:
         bruhUses[interaction.user.id]["num"] += 1
         num = bruhUses[interaction.user.id]["num"]
-        secret = True
+        acsecret = True
         extra += f"\ncooldown due to spam : {'%.2f' % (bruhUses[interaction.user.id]['delay'] - timeElapsed.seconds)}s"
         if num > 1:
           extra += "\n"
@@ -68,7 +71,7 @@ async def bruh(interaction: discord.Interaction, length: int, secret: bool = Fal
         if interaction.user.id in bruhUses and bruhUses[interaction.user.id]["delay"] == 0:
           bruhUses[interaction.user.id]["num"] += 1
 
-        delay = (math.log(length + 1) ** 2) + 10
+        delay = (math.log(aclength + 1) ** 2) + 10
         maxtimesbeforespam = (((60 - delay) / 50) ** 6) * 5
 
         if bruhUses[interaction.user.id]["num"] >= maxtimesbeforespam:
@@ -76,7 +79,7 @@ async def bruh(interaction: discord.Interaction, length: int, secret: bool = Fal
     else:
       extra += "\nonly you can see this but it still makes the sound :)"
 
-    await interaction.response.send_message(f"br{'u' * length}h" + extra, ephemeral = secret)
+    await interaction.response.send_message(f"br{'u' * aclength}h" + extra, ephemeral = acsecret)
 
     if interaction.user.voice != None:
       channel = interaction.user.voice.channel
@@ -87,44 +90,57 @@ async def bruh(interaction: discord.Interaction, length: int, secret: bool = Fal
       else:
         await voice_client.move_to(channel)
 
-      if length < 10:
+      if aclength < 10:
         file = "bruh.mp3"
       else:
         file = "bruh-slow.mp3"
       source = FFmpegPCMAudio(file, executable="ffmpeg")
       voice_client.play(source)
-      if length < 10:
+      if aclength < 10:
         await asyncio.sleep(1)
       else:
         await asyncio.sleep(2)
       await voice_client.disconnect()
-  except Exception as e:
-    client.get_user(Harvaria_id).send(repr(e))
+  except:
+    await reportcommanderror(interaction, traceback.format_exc(), length=length, secret=secret)
 
 
 @tree.command(name = "msg_anon", description = "send a message anonomously", guild = discord.Object(TheGroup_id))
 async def bruh(interaction: discord.Interaction, msg: str):
-  await interaction.response.send_message("you can dismiss this :)", ephemeral = True)
-  await interaction.channel.send(msg)
+  try:
+    await interaction.response.send_message("you can dismiss this :)", ephemeral = True)
+    await interaction.channel.send(msg)
+  except:
+    await reportcommanderror(interaction, traceback.format_exc(), msg=msg)
+
+async def reportcommanderror(interaction : Interaction, traceback : str, **kwargs):
+  errormessage = f"Error occured when {interaction.user.mention} ran command '{interaction.command.name}' in {interaction.channel.mention} with parameters {kwargs}:\n{traceback}"
+  await client.get_user(Harvaria_id).send(errormessage)
+  await interaction.response.send_message("An error occured\n...how did you break it this time :(", ephemeral = True)
+
 
 @client.event
 async def on_message(message: discord.Message):
-  if message.author.id != client.user.id:
-    if message.guild == None:
-      await client.get_channel(bruhChannel_id).send(message.content)
-    else:
-      if message.author.bot and message.author.name == "MEE6" and "GG" in message.content and "You've wasted a lot of your life!" in message.content:
-        print(message.mentions[0].name + " leveled up!")
-        responses = ["very impressive", "most impressive", "waste of space", "wow", "nice", "very cool", "pathetic"]
-        await message.channel.send(f"{message.mentions[0].mention}, {r.choice(responses)}")
-      elif len(message.mentions) > 0:
-        msg: str = ""
-        for mtn in message.mentions:
-          msg += mtn.mention
-        for _ in range(3):
-          await message.channel.send(msg)
-    
-    #print(message.content)
-    #await message.channel.send(message.content)
+  try:
+    if message.author.id != client.user.id:
+      if message.guild == None:
+        await client.get_channel(bruhChannel_id).send(message.content)
+      else:
+        if message.author.bot and message.author.name == "MEE6" and "GG" in message.content and "You've wasted a lot of your life!" in message.content:
+          print(message.mentions[0].name + " leveled up!")
+          responses = ["very impressive", "most impressive", "waste of space", "wow", "nice", "very cool", "pathetic"]
+          await message.channel.send(f"{message.mentions[0].mention}, {r.choice(responses)}")
+        elif len(message.mentions) > 0:
+          msg: str = ""
+          for mtn in message.mentions:
+            msg += mtn.mention
+          for _ in range(3):
+            await message.channel.send(msg)
+
+      #print(message.content)
+      #await message.channel.send(message.content)
+  except:
+    errormessage = f"Error occured parsing message from {message.author.mention} in {message.channel.mention}:\n{message.content}\n\n{traceback.format_exc()}"
+    await client.get_user(Harvaria_id).send(errormessage)
 
 client.run(TOKEN)
