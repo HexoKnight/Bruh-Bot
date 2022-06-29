@@ -8,6 +8,7 @@ import datetime
 TOKEN = "OTkxMjgxMzMzOTE5ODMwMDQ2.GCjxv3.bZweE0DTGyx2eSwDpyPYV9SrYEqK3HWZM8ZPMY"
 TheGroup_id = 761690744703942706
 bruhChannel_id = 991363080720220230
+Harvaria_id = 571981658874445836
 intents = discord.Intents.all()
 
 bruhUses = {}
@@ -29,73 +30,76 @@ tree = app_commands.CommandTree(client)
 
 @tree.command(name = "bruh", description = "bruh", guild = discord.Object(TheGroup_id))
 async def bruh(interaction: discord.Interaction, length: int, secret: bool = False):
-  print(interaction.command.name)
-  extra = ""
-  if length == 0:
-    extra += " wut"
-  elif length > 1000:
-    length = 1000
-    extra += "\nlimited to 1000 or the bot breaks :/"
+  try:
+    a = 1 / 0
+    extra = ""
+    if length == 0:
+      extra += " wut"
+    elif length > 1000:
+      length = 1000
+      extra += "\nlimited to 1000 or the bot breaks :/"
 
-  if not secret:
-    if interaction.user.id in bruhUses and (timeElapsed := datetime.datetime.now() - bruhUses[interaction.user.id]["time"]).seconds < bruhUses[interaction.user.id]["delay"]:
-      bruhUses[interaction.user.id]["num"] += 1
-      num = bruhUses[interaction.user.id]["num"]
-      secret = True
-      extra += f"\ncooldown due to spam : {'%.2f' % (bruhUses[interaction.user.id]['delay'] - timeElapsed.seconds)}s"
-      if num > 1:
-        extra += "\n"
-        if num > 7:
-          extra += "PSYCH! I'M IMMORTAL HAHAHAHA!"
-        elif num > 6:
-          extra += "I'M LITERALLY GONNA DIE"
-        elif num > 5:
-          extra += "YOU'RE KILLING ME BRO"
-        elif num > 4:
-          extra += "PLZ NO SPAM"
-        else:
-          extra += "plz no spam"
-        if num > 2:
-          extra += " (only you can see this :( "
-          if num > 3:
-            extra += "but it still makes the sound :) "
-          extra += ")"
-    else:
-      if interaction.user.id not in bruhUses:
-        bruhUses[interaction.user.id] = {"time" : datetime.datetime.now(), "delay" : 0, "num" : 0}
-      if interaction.user.id in bruhUses and bruhUses[interaction.user.id]["delay"] == 0:
+    if not secret:
+      if interaction.user.id in bruhUses and (timeElapsed := datetime.datetime.now() - bruhUses[interaction.user.id]["time"]).seconds < bruhUses[interaction.user.id]["delay"]:
         bruhUses[interaction.user.id]["num"] += 1
-      
-      delay = (math.log(length + 1) ** 2) + 10
-      maxtimesbeforespam = (((60 - delay) / 50) ** 6) * 5
-  
-      if bruhUses[interaction.user.id]["num"] >= maxtimesbeforespam:
-        bruhUses[interaction.user.id] = {"time" : datetime.datetime.now(), "delay" : delay, "num" : 0}
-  else:
-    extra += "\nonly you can see this but it still makes the sound :)"
+        num = bruhUses[interaction.user.id]["num"]
+        secret = True
+        extra += f"\ncooldown due to spam : {'%.2f' % (bruhUses[interaction.user.id]['delay'] - timeElapsed.seconds)}s"
+        if num > 1:
+          extra += "\n"
+          if num > 7:
+            extra += "PSYCH! I'M IMMORTAL HAHAHAHA!"
+          elif num > 6:
+            extra += "I'M LITERALLY GONNA DIE"
+          elif num > 5:
+            extra += "YOU'RE KILLING ME BRO"
+          elif num > 4:
+            extra += "PLZ NO SPAM"
+          else:
+            extra += "plz no spam"
+          if num > 2:
+            extra += " (only you can see this :( "
+            if num > 3:
+              extra += "but it still makes the sound :) "
+            extra += ")"
+      else:
+        if interaction.user.id not in bruhUses:
+          bruhUses[interaction.user.id] = {"time" : datetime.datetime.now(), "delay" : 0, "num" : 0}
+        if interaction.user.id in bruhUses and bruhUses[interaction.user.id]["delay"] == 0:
+          bruhUses[interaction.user.id]["num"] += 1
 
-  await interaction.response.send_message(f"br{'u' * length}h" + extra, ephemeral = secret)
-  
-  if interaction.user.voice != None:
-    channel = interaction.user.voice.channel
-    voice = discord.utils.get(interaction.guild.voice_channels, name = channel.name)
-    voice_client = discord.utils.get(client.voice_clients, guild = interaction.guild)
-    if voice_client == None:
-      voice_client = await voice.connect()
+        delay = (math.log(length + 1) ** 2) + 10
+        maxtimesbeforespam = (((60 - delay) / 50) ** 6) * 5
+
+        if bruhUses[interaction.user.id]["num"] >= maxtimesbeforespam:
+          bruhUses[interaction.user.id] = {"time" : datetime.datetime.now(), "delay" : delay, "num" : 0}
     else:
-      await voice_client.move_to(channel)
-    
-    if length < 10:
-      file = "bruh.mp3"
-    else:
-      file = "bruh-slow.mp3"
-    source = FFmpegPCMAudio(file, executable="ffmpeg")
-    voice_client.play(source)
-    if length < 10:
-      await asyncio.sleep(1)
-    else:
-      await asyncio.sleep(2)
-    await voice_client.disconnect()
+      extra += "\nonly you can see this but it still makes the sound :)"
+
+    await interaction.response.send_message(f"br{'u' * length}h" + extra, ephemeral = secret)
+
+    if interaction.user.voice != None:
+      channel = interaction.user.voice.channel
+      voice = discord.utils.get(interaction.guild.voice_channels, name = channel.name)
+      voice_client = discord.utils.get(client.voice_clients, guild = interaction.guild)
+      if voice_client == None:
+        voice_client = await voice.connect()
+      else:
+        await voice_client.move_to(channel)
+
+      if length < 10:
+        file = "bruh.mp3"
+      else:
+        file = "bruh-slow.mp3"
+      source = FFmpegPCMAudio(file, executable="ffmpeg")
+      voice_client.play(source)
+      if length < 10:
+        await asyncio.sleep(1)
+      else:
+        await asyncio.sleep(2)
+      await voice_client.disconnect()
+  except Exception as e:
+    client.get_user(Harvaria_id).send(repr(e))
 
 
 @tree.command(name = "msg_anon", description = "send a message anonomously", guild = discord.Object(TheGroup_id))
