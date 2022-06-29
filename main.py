@@ -29,6 +29,7 @@ tree = app_commands.CommandTree(client)
 
 @tree.command(name = "bruh", description = "bruh", guild = discord.Object(TheGroup_id))
 async def bruh(interaction: discord.Interaction, length: int, secret: bool = False):
+  print(interaction.command.name)
   extra = ""
   if length == 0:
     extra += " wut"
