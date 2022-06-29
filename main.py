@@ -41,19 +41,19 @@ async def bruh(interaction: discord.Interaction, length: int, secret: bool = Fal
       bruhUses[interaction.user.id]["num"] += 1
       num = bruhUses[interaction.user.id]["num"]
       secret = True
-      extra += f"cooldown due to spam : {'%.2f' % (bruhUses[interaction.user.id]['delay'] - timeElapsed.seconds)}s"
+      extra += f"\ncooldown due to spam : {'%.2f' % (bruhUses[interaction.user.id]['delay'] - timeElapsed.seconds)}s"
       if num > 1:
         extra += "\n"
         if num > 7:
-          extra = "PSYCH! I'M IMMORTAL HAHAHAHA!"
+          extra += "PSYCH! I'M IMMORTAL HAHAHAHA!"
         elif num > 6:
-          extra = "I'M LITERALLY GONNA DIE"
+          extra += "I'M LITERALLY GONNA DIE"
         elif num > 5:
-          extra = "YOU'RE KILLING ME BRO"
+          extra += "YOU'RE KILLING ME BRO"
         elif num > 4:
-          extra = "PLZ NO SPAM"
+          extra += "PLZ NO SPAM"
         else:
-          extra = "plz no spam"
+          extra += "plz no spam"
         if num > 2:
           extra += " (only you can see this :( "
           if num > 3:
