@@ -37,8 +37,7 @@ async def bruh(interaction: discord.Interaction, length: int, secret: bool = Fal
     extra += "\nlimited to 1000 or the bot breaks :/"
 
   if not secret:
-    timeElapsed = datetime.datetime.now() - bruhUses[interaction.user.id]["time"]
-    if interaction.user.id in bruhUses and timeElapsed.seconds < bruhUses[interaction.user.id]["delay"]:
+    if interaction.user.id in bruhUses and (timeElapsed := datetime.datetime.now() - bruhUses[interaction.user.id]["time"]).seconds < bruhUses[interaction.user.id]["delay"]:
       bruhUses[interaction.user.id]["num"] += 1
       num = bruhUses[interaction.user.id]["num"]
       secret = True
@@ -72,7 +71,7 @@ async def bruh(interaction: discord.Interaction, length: int, secret: bool = Fal
       if bruhUses[interaction.user.id]["num"] >= maxtimesbeforespam:
         bruhUses[interaction.user.id] = {"time" : datetime.datetime.now(), "delay" : delay, "num" : 0}
   else:
-    extra += "\only you can see this but it still makes the sound :)"
+    extra += "\nonly you can see this but it still makes the sound :)"
 
   await interaction.response.send_message(f"br{'u' * length}h" + extra, ephemeral = secret)
   
