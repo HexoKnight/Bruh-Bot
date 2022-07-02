@@ -1,2 +1,3 @@
 git+https://github.com/Rapptz/discord.py
 PyNaCl
+googletrans==3.1.0a0

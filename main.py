@@ -6,6 +6,7 @@ from discord.ext import commands
 import random as r
 import datetime
 import traceback
+import googletrans
 
 TOKEN = "OTkxMjgxMzMzOTE5ODMwMDQ2.GCjxv3.bZweE0DTGyx2eSwDpyPYV9SrYEqK3HWZM8ZPMY"
 TheGroup_id = 761690744703942706
@@ -112,6 +113,27 @@ async def bruh(interaction: discord.Interaction, msg: str):
     await interaction.channel.send(msg)
   except:
     await reportcommanderror(interaction, traceback.format_exc(), msg=msg)
+
+@tree.command(name = "goolgetrans", description = "translate using google translate", guild = discord.Object(TheGroup_id))
+async def goolgetrans(interaction: discord.Interaction, text : str, langfrom : str = "auto", langto : str = "en", hidden : bool = False):
+  try:
+    if langfrom not in googletrans.LANGCODES and langfrom not in googletrans.LANGUAGES and langfrom != "auto":
+      await interaction.response.send_message("'langfrom' must be 'auto' or one of:\n" + ", ".join([f"{x}: {googletrans.LANGUAGES[x]}" for x in googletrans.LANGUAGES]), ephemeral = True)
+      return
+    if langto not in googletrans.LANGCODES and langto not in googletrans.LANGUAGES:
+      await interaction.response.send_message("'langto' must be one of:\n" + ", ".join([f"{x}: {googletrans.LANGUAGES[x]}" for x in googletrans.LANGUAGES]), ephemeral = True)
+      return
+    translated = googletrans.Translator().translate(text = text, src = langfrom, dest = langto)
+    await interaction.response.send_message(translated.text, ephemeral = hidden)
+  except:
+    await reportcommanderror(interaction, traceback.format_exc(), text = text, langfrom = langfrom, langto = langto, hidden = hidden)
+
+#@tree.command(name = "name", description = "description", guild = discord.Object(TheGroup_id))
+#async def name(interaction: discord.Interaction, *args):
+#  try:
+#    await interaction.response.send_message("message", ephemeral = True)
+#  except:
+#    await reportcommanderror(interaction, traceback.format_exc(), args = args)
 
 async def reportcommanderror(interaction : Interaction, traceback : str, **kwargs):
   errormessage = f"Error occured when {interaction.user.mention} ran command '{interaction.command.name}' in {interaction.channel.mention} with parameters {kwargs}:\n{traceback}"
