@@ -114,8 +114,8 @@ async def bruh(interaction: discord.Interaction, msg: str):
   except:
     await reportcommanderror(interaction, traceback.format_exc(), msg=msg)
 
-@tree.command(name = "googletrans", description = "translate using google translate", guild = discord.Object(TheGroup_id))
-async def googletrans(interaction: discord.Interaction, text : str, langfrom : str = "auto", langto : str = "en", hidden : bool = False):
+@tree.command(name = "translate", description = "translate using google translate", guild = discord.Object(TheGroup_id))
+async def translate(interaction: discord.Interaction, text : str, langfrom : str = "auto", langto : str = "en", hidden : bool = False):
   try:
     if langfrom not in googletrans.LANGCODES and langfrom not in googletrans.LANGUAGES and langfrom != "auto":
       await interaction.response.send_message("'langfrom' must be 'auto' or one of:\n" + ", ".join([f"{x}: {googletrans.LANGUAGES[x]}" for x in googletrans.LANGUAGES]), ephemeral = True)
