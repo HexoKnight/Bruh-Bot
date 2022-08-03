@@ -12,6 +12,7 @@ TOKEN = "OTkxMjgxMzMzOTE5ODMwMDQ2.GCjxv3.bZweE0DTGyx2eSwDpyPYV9SrYEqK3HWZM8ZPMY"
 TheGroup_id = 761690744703942706
 bruhChannel_id = 991363080720220230
 Harvaria_id = 571981658874445836
+Lounge_id = 761690744703942712
 intents = discord.Intents.all()
 
 bruhUses = {}
@@ -82,8 +83,15 @@ async def bruh(interaction: discord.Interaction, length: int, secret: bool = Fal
 
     await interaction.response.send_message(f"br{'u' * aclength}h" + extra, ephemeral = acsecret)
 
+    go = False
     if interaction.user.voice != None:
       channel = interaction.user.voice.channel
+      go = True
+    else:
+      channel = client.get_channel(Lounge_id)
+      if len(channel.voice_states) > 0:
+        go = True
+    if go:
       voice = discord.utils.get(interaction.guild.voice_channels, name = channel.name)
       voice_client = discord.utils.get(client.voice_clients, guild = interaction.guild)
       if voice_client == None:
@@ -150,7 +158,7 @@ async def on_message(message: discord.Message):
       else:
         if message.author.bot and message.author.name == "MEE6" and "GG" in message.content and "You've wasted a lot of your life!" in message.content:
           print(message.mentions[0].name + " leveled up!")
-          responses = ["very impressive", "most impressive", "waste of space", "wow", "nice", "very cool", "pathetic"]
+          responses = ["very impressive", "most impressive", "waste of space", "wow", "nice", "very cool", "pathetic", "0/10, don't recommend"]
           await message.channel.send(f"{message.mentions[0].mention}, {r.choice(responses)}")
         elif len(message.mentions) > 0:
           msg: str = ""
