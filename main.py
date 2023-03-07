@@ -1,3 +1,4 @@
+#region imports
 import asyncio
 import math
 import discord
@@ -7,31 +8,220 @@ import random as r
 import datetime
 import traceback
 import googletrans
+import json
+#endregion
 
 TOKEN = "OTkxMjgxMzMzOTE5ODMwMDQ2.GCjxv3.bZweE0DTGyx2eSwDpyPYV9SrYEqK3HWZM8ZPMY"
-TheGroup_id = 761690744703942706
 bruhChannel_id = 991363080720220230
 Harvaria_id = 571981658874445836
-#Lounge_id = 761690744703942712
 intents = discord.Intents.all()
 
-server_ids = [TheGroup_id, 1059896150720786492] # samuel's server
-server_objects = [discord.Object(id) for id in server_ids]
-
 bruhUses = {}
+#region extra functions
+def guildtostr(guild):
+  return f"'{guild.name}' : {guild.id}"
 
+def printconsole(str):
+  print(datetime.datetime.now().isoformat(' ', timespec='seconds') + "   -   " + str)
+
+async def notify(str):
+  printconsole(str)
+  await client.get_user(Harvaria_id).send(str)
+#endregion
+
+#region data
+data = {}
+defaultdata = {
+  "pingdup" : 0
+}
+def getdata():
+  global data
+  try:
+    with open("data.json", "r") as datafile:
+      str_indexed_data = json.load(datafile)
+    data = {int(id) : str_indexed_data[id] for id in str_indexed_data}
+  except:
+    data = {}
+  for guild in client.guilds:
+    if guild.id not in data:
+      data[guild.id] = {"pingdup" : 0}
+
+def setdata():
+  global data
+  data = {id : data[id] for id in data if id in [guild.id for guild in client.guilds]}
+  #for id in data:
+  #  if id not in [guild.id for guild in client.guilds]:
+  #    del data[id]
+  with open("data.json", "w") as datafile:
+    json.dump(data, datafile)
+
+def getguilddata(id, data_name):
+  try:
+    return data[id][data_name]
+  except:
+    data[id][data_name] = defaultdata[data_name]
+    return data[id][data_name]
+
+def setguilddata(id, data_name, value):
+  data[id][data_name] = value
+#endregion
+
+#region client/tree setup
 class myclient(discord.Client):
   def __init__(self):
     super().__init__(intents=intents)
 
   async def on_ready(self):
     await self.wait_until_ready()
+    getdata()
     print(f"Successfully logged in as {self.user}.")
+    print(data)
 
 client = myclient()
 tree = app_commands.CommandTree(client)
+#endregion
 
-@tree.command(name = "bruh", description = "bruh", guilds = server_objects)
+#region admin commands
+async def sync():
+  await notify("syncing...")
+  for guild in client.guilds:
+    await notify(guildtostr(guild))
+    tree.copy_global_to(guild = guild)
+    await tree.sync(guild = guild)
+  getdata()
+  await notify("synced!")
+
+async def showdata():
+  str = "data:"
+  for guild in client.guilds:
+    str += f"\n{guildtostr(guild)}:"
+    for datapoint in data[guild.id]:
+      str += f"\n\t{datapoint} : {data[guild.id][datapoint]}"
+  await client.get_user(Harvaria_id).send(str)
+
+admin_commands = {
+  "sync" : sync,
+  "data" : showdata
+  }
+#endregion
+
+#region client events
+@client.event
+async def on_message(message: discord.Message):
+  try:
+    if message.author.id != client.user.id:
+      if message.guild == None:
+        if message.author.id == Harvaria_id and message.content in admin_commands:
+          await admin_commands[message.content]()
+        else:
+          await client.get_channel(bruhChannel_id).send(message.content)
+      else:
+        if message.author.bot and message.author.name == "MEE6" and "GG" in message.content and "You've wasted a lot of your life!" in message.content:
+          printconsole(message.mentions[0].name + " leveled up!")
+          responses = ["very impressive", "most impressive", "waste of space", "wow", "nice", "very cool", "pathetic", "0/10, don't recommend", "eww"]
+          await message.channel.send(f"{message.mentions[0].mention}, {r.choice(responses)}")
+        elif len(message.mentions) > 0 and message.reference is None and not message.author.bot:
+          msg: str = ""
+          for mtn in message.mentions:
+            msg += mtn.mention
+          for _ in range(getguilddata(message.guild.id, "pingdup")):
+            await message.channel.send(msg)
+
+      #print(message.content)
+      #await message.channel.send(message.content)
+  except:
+    try:
+      channel = message.channel.mention
+    except:
+      channel = "this DM"
+    errormessage = f"Error occured parsing message from {message.author.mention} in {channel}:\n{message.content}\n\n{traceback.format_exc()}"
+    await notify(errormessage)
+
+@client.event
+async def on_guild_join(guild):
+  await notify(f"joined guild:\n{guildtostr(guild)}")
+  await sync()
+#endregion
+
+#region polling
+class PollSelect(discord.ui.Select):
+  def __init__(self, pollinteraction, options):
+    super().__init__(placeholder="Select an option",max_values=1,min_values=1,options=options)
+    self.pollinteraction = pollinteraction
+
+  async def callback(self, interaction: discord.Interaction):
+    await interaction.response.send_message(content=f"You voted for: {self.values[0]}!",ephemeral=True, delete_after=3)
+    self.pollinteraction.extras[interaction.user.id] = self.values[0]
+
+    original_response = await self.pollinteraction.original_response()
+    content = ""
+    for option in self.options:
+      content += f"{option.label} : {len([id for id in self.pollinteraction.extras if self.pollinteraction.extras[id] == option.label])}\n"
+    content += f"poll open for {self.view.timeout} seconds"
+    await original_response.edit(content=content)
+    #await interaction.response.send_message(content=f"Your choice is {self.values[0]}!",ephemeral=True)
+
+class PollSelectView(discord.ui.View):
+  def __init__(self, pollinteraction, options, timeout):
+    super().__init__(timeout=timeout)
+    self.add_item(PollSelect(pollinteraction, options))
+  
+  async def on_timeout(self):
+    original_response = await self.children[0].pollinteraction.original_response()
+    original_message = await original_response.fetch()
+    content = original_message.content.rsplit("\n", 1)[0] + f"\npoll closed after {self.timeout} seconds"
+    await original_response.edit(content=content)
+
+@tree.command(name = "poll", description = "create a poll (default length is 3 minutes)")
+@discord.app_commands.describe(options = "comma separated list of options")
+@discord.app_commands.describe(options = "(in seconds)")
+async def poll(interaction: discord.Interaction, options: str, timeout: int = 180):
+  try:
+    if timeout < 0:
+      await interaction.response.send_message("cannot have a timeout < 0", ephemeral = True)
+      return
+    if timeout > 86400:
+      await interaction.response.send_message("cannot have a timeout > 86400 seconds (24 hours)", ephemeral = True)
+      return
+    #options = ["yay", "nay"]
+    #timeout = 10
+    options = [option.strip() for option in options.split(",")]
+    if len(options) != len(set(options)):
+      await interaction.response.send_message("cannot have duplicate items", ephemeral = True)
+      return
+    content = ""
+    for option in options:
+      content += f"{option} : 0\n"
+    content += f"poll open for {timeout} seconds"
+    await interaction.response.send_message(content)
+    view = PollSelectView(interaction, [discord.SelectOption(label=option) for option in options], timeout)
+    interaction.extras = {}
+    message = await interaction.channel.send(view=view)
+    await message.delete(delay=timeout)
+  except:
+    await reportcommanderror(interaction, traceback.format_exc(), options = options, timeout = timeout)
+#endregion
+
+#region pingdup
+@tree.command(name = "setpingdup", description = "change the number of times bruhbot repings a ping (default is 0)")
+async def setpingdup(interaction: discord.Interaction, number: int):
+  try:
+    if number < 0:
+      await interaction.response.send_message("cannot be less than 0 (how???)", ephemeral = True)
+      return
+    if number > 3:
+      await interaction.response.send_message("cannot be more than 3 (the bot will get rate-limited)", ephemeral = True)
+      return
+    setguilddata(int(interaction.guild.id), "pingdup", number)
+    setdata()
+    printconsole(f"pingdup set to {number} for: {guildtostr(interaction.guild)}")
+    await interaction.response.send_message(f"pingdup set to {number}", ephemeral = False)
+  except:
+    await reportcommanderror(interaction, traceback.format_exc(), number = number)
+#endregion
+
+#region bruh
+@tree.command(name = "bruh", description = "bruh")
 async def bruh(interaction: discord.Interaction, length: int, secret: bool = False):
   try:
     aclength = length
@@ -116,17 +306,20 @@ async def bruh(interaction: discord.Interaction, length: int, secret: bool = Fal
       await voice_client.disconnect()
   except:
     await reportcommanderror(interaction, traceback.format_exc(), length=length, secret=secret)
+#endregion
 
-
-@tree.command(name = "msg_anon", description = "send a message anonomously", guilds = server_objects)
+#region msg_anon
+@tree.command(name = "msg_anon", description = "send a message anonomously")
 async def bruh(interaction: discord.Interaction, msg: str):
   try:
     await interaction.response.send_message("you can dismiss this :)", ephemeral = True)
     await interaction.channel.send(msg)
   except:
     await reportcommanderror(interaction, traceback.format_exc(), msg=msg)
+#endregion
 
-@tree.command(name = "translate", description = "translate using google translate", guilds = server_objects)
+#region translate
+@tree.command(name = "translate", description = "translate using google translate")
 async def translate(interaction: discord.Interaction, text : str, langfrom : str = "auto", langto : str = "en", hidden : bool = False):
   try:
     if langfrom not in googletrans.LANGCODES and langfrom not in googletrans.LANGUAGES and langfrom != "auto":
@@ -139,8 +332,9 @@ async def translate(interaction: discord.Interaction, text : str, langfrom : str
     await interaction.response.send_message(translated.text, ephemeral = hidden)
   except:
     await reportcommanderror(interaction, traceback.format_exc(), text = text, langfrom = langfrom, langto = langto, hidden = hidden)
+#endregion
 
-#@tree.command(name = "name", description = "description", guilds = server_objects)
+#@tree.command(name = "name", description = "description")
 #async def name(interaction: discord.Interaction, *args):
 #  try:
 #    await interaction.response.send_message("message", ephemeral = True)
@@ -152,41 +346,5 @@ async def reportcommanderror(interaction : Interaction, traceback : str, **kwarg
   await client.get_user(Harvaria_id).send(errormessage)
   await interaction.response.send_message("An error occured\n...how did you break it this time :(", ephemeral = True)
 
-
-@client.event
-async def on_message(message: discord.Message):
-  try:
-    if message.author.id != client.user.id:
-      if message.guild == None:
-        if message.author.id == Harvaria_id and message.content == "SYNC":
-          print("syncing...")
-          await client.get_user(Harvaria_id).send("syncing...")
-          for server_object in server_objects:
-            await tree.sync(guild = server_object)
-          await client.get_user(Harvaria_id).send("synced!")
-          print("synced!")
-        else:
-          await client.get_channel(bruhChannel_id).send(message.content)
-      else:
-        if message.author.bot and message.author.name == "MEE6" and "GG" in message.content and "You've wasted a lot of your life!" in message.content:
-          print(message.mentions[0].name + " leveled up!")
-          responses = ["very impressive", "most impressive", "waste of space", "wow", "nice", "very cool", "pathetic", "0/10, don't recommend"]
-          await message.channel.send(f"{message.mentions[0].mention}, {r.choice(responses)}")
-        elif len(message.mentions) > 0 and message.reference is None and not message.author.bot:
-          msg: str = ""
-          for mtn in message.mentions:
-            msg += mtn.mention
-          for _ in range(3):
-            await message.channel.send(msg)
-
-      #print(message.content)
-      #await message.channel.send(message.content)
-  except:
-    try:
-      channel = message.channel.mention
-    except:
-      channel = "this DM"
-    errormessage = f"Error occured parsing message from {message.author.mention} in {channel}:\n{message.content}\n\n{traceback.format_exc()}"
-    await client.get_user(Harvaria_id).send(errormessage)
 
 client.run(TOKEN)
