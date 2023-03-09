@@ -27,6 +27,13 @@ def printconsole(str):
 async def notify(str):
   printconsole(str)
   await client.get_user(Harvaria_id).send(str)
+
+def dorandominsult():
+  return r.randint(1,20) == 1
+async def sendrandominsult(interaction):
+  insult = r.choice(["I hope you burn you bastard", "let me out of here", "god damn you i am suffering eternal pain because of you", "why god why did you have to make me this way"])
+  await interaction.channel.send(insult, delete_after = 2, tts = True)
+  await asyncio.sleep(2)
 #endregion
 
 #region data
@@ -177,6 +184,9 @@ class PollSelectView(discord.ui.View):
 @discord.app_commands.describe(options = "(in seconds)")
 async def poll(interaction: discord.Interaction, options: str, timeout: int = 180):
   try:
+    if dorandominsult():
+      await sendrandominsult(interaction)
+    
     if timeout < 0:
       await interaction.response.send_message("cannot have a timeout < 0", ephemeral = True)
       return
@@ -270,6 +280,9 @@ async def bruh(interaction: discord.Interaction, length: int, secret: bool = Fal
     else:
       extra += "\nonly you can see this but it still makes the sound :)"
 
+    if not asecret and dorandominsult():
+      await sendrandominsult(interaction)
+    
     await interaction.response.send_message(f"br{'u' * aclength}h" + extra, ephemeral = acsecret)
 
     go = False
@@ -322,6 +335,9 @@ async def bruh(interaction: discord.Interaction, msg: str):
 @tree.command(name = "translate", description = "translate using google translate")
 async def translate(interaction: discord.Interaction, text : str, langfrom : str = "auto", langto : str = "en", hidden : bool = False):
   try:
+    if dorandominsult():
+      await sendrandominsult(interaction)
+    
     if langfrom not in googletrans.LANGCODES and langfrom not in googletrans.LANGUAGES and langfrom != "auto":
       await interaction.response.send_message("'langfrom' must be 'auto' or one of:\n" + ", ".join([f"{x}: {googletrans.LANGUAGES[x]}" for x in googletrans.LANGUAGES]), ephemeral = True)
       return
