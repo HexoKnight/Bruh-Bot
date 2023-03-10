@@ -9,6 +9,11 @@ import datetime
 import traceback
 import googletrans
 import json
+
+import sys, os
+from concurrent.futures import ProcessPoolExecutor
+import multiprocessing
+import shutil
 #endregion
 
 TOKEN = "OTkxMjgxMzMzOTE5ODMwMDQ2.GCjxv3.bZweE0DTGyx2eSwDpyPYV9SrYEqK3HWZM8ZPMY"
@@ -80,6 +85,10 @@ class myclient(discord.Client):
 
   async def on_ready(self):
     await self.wait_until_ready()
+    try:
+      shutil.rmtree("temp")
+    except:
+      pass
     getdata()
     print(f"Successfully logged in as {self.user}.")
     print(data)
@@ -148,6 +157,140 @@ async def on_message(message: discord.Message):
 async def on_guild_join(guild):
   await notify(f"joined guild:\n{guildtostr(guild)}")
   await sync()
+#endregion
+
+#region runpython
+class PythonModal(discord.ui.Modal):
+  code = discord.ui.TextInput(label='Code', style=discord.TextStyle.paragraph)
+  async def on_submit(self, interaction: discord.Interaction):
+    await runpython(interaction, self.code.value)
+
+class PythonInputModal(discord.ui.Modal):
+  input = discord.ui.TextInput(label='Input', style=discord.TextStyle.short)
+
+  def __init__(self, title, pipe, buttonInteraction):
+    super().__init__(title=title)
+    self.pipe = pipe
+    self.buttonInteraction = buttonInteraction
+    
+  async def on_submit(self, interaction: discord.Interaction):
+    self.pipe.send(self.input.value)
+    await self.buttonInteraction.edit_original_response(view=None)
+    await interaction.response.defer(ephemeral=True, thinking=False)
+
+class PythonInputButton(discord.ui.Button):
+  style = discord.ButtonStyle.green
+  def __init__(self, pipe):
+    super().__init__(label = "input")
+    self.pipe = pipe
+  
+  async def callback(self, interaction: discord.Interaction):
+    await interaction.response.send_modal(PythonInputModal("Enter input to python code", self.pipe, interaction))
+    #self.disabled = True
+
+class PythonInputView(discord.ui.View):
+  def __init__(self, pipe):
+    super().__init__()
+    self.add_item(PythonInputButton(pipe))
+
+def newinput(pipe, prompt):
+  print(prompt, end='', flush=True)
+  pipe.send(True)
+  if not pipe.poll(180): # input timeout
+    pipe.send(True)
+    raise Exception("You took too long to respond")
+  inp = pipe.recv()
+  pipe.send(True)
+  print(inp)
+  return inp
+  # import time
+  # while not inputting.empty():
+  #   print("inputting...")
+  #   time.sleep(1)
+
+def tryexec(code, globals, locals):
+  try:
+    exec(compile(code, "Your Code", "exec"), globals, locals)
+  except Exception as e:
+    with open("temp/out/" + str(__import__("os").getpid()) + ".out", "a") as out:
+      out.write("\n" + (str(e) if str(e) == "You took too long to respond" else traceback.format_exc()))
+
+async def runpython(interaction, code, secret = False):
+  from pathlib import Path
+  Path("temp/out").mkdir(parents=True, exist_ok=True)
+  setup = '__import__("sys").stdout = open("temp/out/" + str(__import__("os").getpid()) + ".out", "w")\ninput = lambda prompt="": __newinput__(__getinput__, prompt)\n'
+  (pipe, otherpipe) = multiprocessing.Pipe(True)
+  await interaction.response.defer(ephemeral=secret, thinking=True)
+  followup = None
+  newglobals = {"__newinput__" : newinput, "__getinput__" : otherpipe}
+  p = multiprocessing.Process(target=tryexec, args=(setup + code, newglobals, newglobals))
+  p.start()
+
+  output = ""
+
+  async def followup_output(output, followup, newview):
+    if not output:
+      output = "[no output]"
+    else:
+      if len(output) >= 1980:
+        lines = output.split('\n')
+        while sum(len(line) for line in lines) + len(lines) >= 1980:
+          lines.pop(0)
+        output = "\n".join(["[...continued...]"] + lines)
+    if followup is None:
+      if newview is None:
+        followup = await interaction.followup.send(output)
+      else:
+        followup = await interaction.followup.send(output, view=newview)
+    else:
+      followup = await followup.edit(content = output, view=newview)
+    return (output, followup)
+
+  while True:
+    total_wait = 5
+    check_interval = 0.2
+    for _ in range(int(total_wait / check_interval)):
+      await asyncio.sleep(check_interval)
+      if pipe.poll() or not p.is_alive():
+        break
+    else:#if not pipe.poll():
+      break
+    if not p.is_alive():
+      break
+
+    view = PythonInputView(pipe)
+    with open("temp/out/" + str(p.pid) + ".out", "r+") as file:
+      output = "".join(file.readlines())
+      #file.truncate(0)
+    (output, followup) = await followup_output(output, followup, view)
+
+    pipe.recv()
+    while not pipe.poll():
+      await asyncio.sleep(0.2) # input poll interval
+    pipe.recv()
+
+  if p.is_alive():
+    output = "code ran too long"
+    p.kill()
+  else:
+    with open(f"temp/out/{p.pid}.out") as file:
+      output = "".join(file.readlines())
+  
+  (output, followup) = await followup_output(output, followup, None)
+    
+  try:
+    os.remove(f"temp/out/{p.pid}.out")
+  except:
+    pass
+
+@tree.command(name = "python", description = "run python code (cannot take longer than 5 seconds between inputs though)")
+async def python(interaction: discord.Interaction):
+  try:
+    if dorandominsult():
+      await sendrandominsult(interaction)
+    await interaction.response.send_modal(PythonModal(title="Enter python code"))
+  except:
+    await reportcommanderror(interaction, traceback.format_exc())
 #endregion
 
 #region polling
@@ -280,7 +423,7 @@ async def bruh(interaction: discord.Interaction, length: int, secret: bool = Fal
     else:
       extra += "\nonly you can see this but it still makes the sound :)"
 
-    if not asecret and dorandominsult():
+    if not acsecret and dorandominsult():
       await sendrandominsult(interaction)
     
     await interaction.response.send_message(f"br{'u' * aclength}h" + extra, ephemeral = acsecret)
@@ -362,5 +505,5 @@ async def reportcommanderror(interaction : Interaction, traceback : str, **kwarg
   await client.get_user(Harvaria_id).send(errormessage)
   await interaction.response.send_message("An error occured\n...how did you break it this time :(", ephemeral = True)
 
-
-client.run(TOKEN)
+if __name__ == "__main__":
+  client.run(TOKEN)
