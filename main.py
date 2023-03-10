@@ -49,7 +49,7 @@ defaultdata = {
 def getdata():
   global data
   try:
-    with open("data.json", "r") as datafile:
+    with open("data/data.json", "r") as datafile:
       str_indexed_data = json.load(datafile)
     data = {int(id) : str_indexed_data[id] for id in str_indexed_data}
   except:
@@ -64,7 +64,7 @@ def setdata():
   #for id in data:
   #  if id not in [guild.id for guild in client.guilds]:
   #    del data[id]
-  with open("data.json", "w") as datafile:
+  with open("data/data.json", "w") as datafile:
     json.dump(data, datafile)
 
 def getguilddata(id, data_name):
