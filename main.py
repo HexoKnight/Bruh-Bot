@@ -65,7 +65,8 @@ data = {
   "admin" : {},
   "admin_default" : { # must all be booleans for now
     "errors" : False,
-    "joins" : False
+    "joins" : False,
+    "restarts" : False
   }
 }
 #endregion
@@ -190,6 +191,11 @@ sync - sync bruhbot commands
 data [server|admin|all] - show data for servers/admins/all'''
   await client.get_user(userid).send(str)
 
+async def restart(userid, *_):
+  await notify(getadmins("restarts", userid), "restarting...")
+  future = asyncio.run_coroutine_threadsafe(client.close(), asyncio.get_event_loop())
+  future.add_done_callback(lambda _: os.execv(sys.executable, [sys.executable] + sys.argv))
+
 async def addadmin(*userids):
   for userid in userids:
     data["admin"][int(userid)] = {}
@@ -208,7 +214,8 @@ admin_commands = {
   "data" : showdata, # add help command
   "settings" : showadminsettings,
   "toggle" : toggleadminsettings,
-  "help" : showhelp
+  "help" : showhelp,
+  "restart" : restart
   }
 superadmin_commands = {
   "addadmin" : addadmin,
