@@ -327,13 +327,14 @@ async def runpython(interaction, code, secret = False):
         followup = await interaction.followup.send(output)
       else:
         followup = await interaction.followup.send(output, view=newview)
+      await followup.add_reaction('🐍')
     else:
       followup = await followup.edit(content = output, view=newview)
     return (output, followup)
 
   while True:
     total_wait = 5
-    check_interval = 0.2
+    check_interval = 0.1
     for _ in range(int(total_wait / check_interval)):
       await asyncio.sleep(check_interval)
       if pipe.poll() or not p.is_alive():
@@ -351,7 +352,7 @@ async def runpython(interaction, code, secret = False):
 
     pipe.recv()
     while not pipe.poll():
-      await asyncio.sleep(0.2) # input poll interval
+      await asyncio.sleep(0.1) # input poll interval
     pipe.recv()
 
   if p.is_alive():
@@ -441,7 +442,7 @@ async def poll(interaction: discord.Interaction, options: str, timeout: int = 18
 #endregion
 
 #region pingdup
-@tree.command(name = "setpingdup", description = "change the number of times bruhbot repings a ping (default is 0)")
+@tree.command(name = "setpingdup", description = "change the number of times bruhbot repings a ping in this server (default is 0)")
 async def setpingdup(interaction: discord.Interaction, number: int):
   try:
     if number < 0:
