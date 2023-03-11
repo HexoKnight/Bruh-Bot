@@ -218,8 +218,8 @@ async def removeadmin(*userids):
   storedata("admin")
 
 admin_commands = {
-  "sync" : sync, # make require exclamation point at start
-  "data" : showdata, # add help command
+  "sync" : sync,
+  "data" : showdata,
   "settings" : showadminsettings,
   "toggle" : toggleadminsettings,
   "help" : showhelp,
