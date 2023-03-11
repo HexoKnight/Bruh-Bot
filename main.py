@@ -550,9 +550,6 @@ async def bruh(interaction: discord.Interaction, length: int, secret: bool = Fal
       if len(occupied_voice_channels) > 0:
         channel = occupied_voice_channels[0] # just use first if multiple
         go = True
-      #channel = client.get_channel(Lounge_id)
-      #if len(channel.voice_states) > 0:
-      #  go = True
     if go:
       voice = discord.utils.get(interaction.guild.voice_channels, name = channel.name)
       voice_client = discord.utils.get(client.voice_clients, guild = interaction.guild)
