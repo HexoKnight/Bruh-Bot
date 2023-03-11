@@ -15,6 +15,8 @@ from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
 import shutil
 from pathlib import Path
+
+import subprocess
 #endregion
 
 TOKEN = "OTkxMjgxMzMzOTE5ODMwMDQ2.GCjxv3.bZweE0DTGyx2eSwDpyPYV9SrYEqK3HWZM8ZPMY"
@@ -66,7 +68,8 @@ data = {
   "admin_default" : { # must all be booleans for now
     "errors" : False,
     "joins" : False,
-    "restarts" : False
+    "restarts" : False,
+    "updates" : False
   }
 }
 #endregion
@@ -196,6 +199,11 @@ async def restart(userid, *_):
   future = asyncio.run_coroutine_threadsafe(client.close(), asyncio.get_event_loop())
   future.add_done_callback(lambda _: os.execv(sys.executable, [sys.executable] + sys.argv))
 
+async def update(userid, *_):
+  await notify(getadmins("updates", userid), "updating...")
+  subprocess.run(["git", "pull"], stdout = sys.stdout)
+  await restart(userid, *_)
+
 async def addadmin(*userids):
   for userid in userids:
     data["admin"][int(userid)] = {}
@@ -215,7 +223,8 @@ admin_commands = {
   "settings" : showadminsettings,
   "toggle" : toggleadminsettings,
   "help" : showhelp,
-  "restart" : restart
+  "restart" : restart,
+  "update" : update
   }
 superadmin_commands = {
   "addadmin" : addadmin,
