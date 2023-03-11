@@ -14,6 +14,7 @@ import sys, os
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
 import shutil
+from pathlib import Path
 #endregion
 
 TOKEN = "OTkxMjgxMzMzOTE5ODMwMDQ2.GCjxv3.bZweE0DTGyx2eSwDpyPYV9SrYEqK3HWZM8ZPMY"
@@ -23,15 +24,29 @@ intents = discord.Intents.all()
 
 bruhUses = {}
 #region extra functions
+def idtostr(id):
+  name = "unknown (probably error)"
+  if (guild := client.get_guild(id)) is not None:
+    name = f"'{guild.name}'"
+  elif (user := client.get_user(id)) is not None:
+    name = user.mention
+  return f"{name} : {id}"
 def guildtostr(guild):
   return f"'{guild.name}' : {guild.id}"
+def useridtostr(userid):
+  return f"'{client.get_user(userid).mention}' : {userid}"
 
 def printconsole(str):
   print(datetime.datetime.now().isoformat(' ', timespec='seconds') + "   -   " + str)
 
-async def notify(str):
+async def notify(userids, str):
   printconsole(str)
-  await client.get_user(Harvaria_id).send(str)
+  try:
+    iterator = iter(userids)
+  except:
+    iterator = iter([userids])
+  for userid in iterator:
+    await client.get_user(userid).send(str)
 
 def dorandominsult():
   return r.randint(1,20) == 1
@@ -42,40 +57,62 @@ async def sendrandominsult(interaction):
 #endregion
 
 #region data
-data = {}
-defaultdata = {
-  "pingdup" : 0
+data = {
+  "server" : {},
+  "server_default" : {
+    "pingdup" : 0
+  },
+  "admin" : {},
+  "admin_default" : { # must all be booleans for now
+    "errors" : False,
+    "joins" : False
+  }
 }
-def getdata():
-  global data
+
+def loadjson(filename):
   try:
-    with open("data/data.json", "r") as datafile:
+    with open(f"data/{filename}.json", "r") as datafile:
       str_indexed_data = json.load(datafile)
     data = {int(id) : str_indexed_data[id] for id in str_indexed_data}
   except:
     data = {}
-  for guild in client.guilds:
-    if guild.id not in data:
-      data[guild.id] = {"pingdup" : 0}
-
-def setdata():
-  global data
-  data = {id : data[id] for id in data if id in [guild.id for guild in client.guilds]}
-  #for id in data:
-  #  if id not in [guild.id for guild in client.guilds]:
-  #    del data[id]
-  with open("data/data.json", "w") as datafile:
+  return data
+def storejson(filename, data):
+  Path("data").mkdir(parents=True, exist_ok=True)
+  with open(f"data/{filename}.json", "w") as datafile:
     json.dump(data, datafile)
 
-def getguilddata(id, data_name):
-  try:
-    return data[id][data_name]
-  except:
-    data[id][data_name] = defaultdata[data_name]
-    return data[id][data_name]
+def retrievedata(dataname):
+  global data
+  data[dataname] = loadjson(dataname)
+  if dataname == "server":
+    for guild in client.guilds:
+      if guild.id not in data["server"]:
+        data["server"][guild.id] = {}
+def storedata(dataname):
+  global data
+  thisdata = data[dataname].copy()
+  if dataname == "server":
+    thisdata = {id : thisdata[id] for id in thisdata if id in [guild.id for guild in client.guilds]}
+  storejson(dataname, thisdata)
 
-def setguilddata(id, data_name, value):
-  data[id][data_name] = value
+def getdata(dataname, id, datapoint):
+  global data
+  #return data[dataname].setdefault(id, data[dataname + "_default"]).setdefault(datapoint, data[dataname + "_default"][datapoint])
+  if id not in data[dataname]:
+    data[dataname][id] = data[dataname + "_default"]
+  elif datapoint not in data[dataname][id]:
+    data[dataname][id][datapoint] = data[dataname + "_default"][datapoint]
+  return data[dataname][id][datapoint]
+
+def setdata(dataname, id, datapoint, value):
+  global data
+  if id not in data[dataname]:
+    data[dataname][id] = {}
+  data[dataname][id][datapoint] = value
+
+def getadmins(datapoint = ""):
+  return [userid for userid in data["admin"] if not datapoint or getdata("admin", userid, datapoint)]
 #endregion
 
 #region client/tree setup
@@ -89,7 +126,8 @@ class myclient(discord.Client):
       shutil.rmtree("temp")
     except:
       pass
-    getdata()
+    retrievedata("server")
+    retrievedata("admin")
     print(f"Successfully logged in as {self.user}.")
     print(data)
 
@@ -98,26 +136,73 @@ tree = app_commands.CommandTree(client)
 #endregion
 
 #region admin commands
-async def sync():
-  await notify("syncing...")
+async def sync(userid, *_):
+  await notify(userid, "syncing...")
   for guild in client.guilds:
-    await notify(guildtostr(guild))
+    await notify(userid, guildtostr(guild))
     tree.copy_global_to(guild = guild)
     await tree.sync(guild = guild)
-  getdata()
-  await notify("synced!")
+  retrievedata("server")
+  await notify(userid, "synced!")
 
-async def showdata():
-  str = "data:"
-  for guild in client.guilds:
-    str += f"\n{guildtostr(guild)}:"
-    for datapoint in data[guild.id]:
-      str += f"\n\t{datapoint} : {data[guild.id][datapoint]}"
-  await client.get_user(Harvaria_id).send(str)
+async def showdata(userid, *datanames):
+  if not datanames or datanames[0] == "all":
+    datanames = [dataname for dataname in data if not dataname.endswith("_default")]
+  str = ""
+  for dataname in datanames:
+    if dataname in ["servers", "guild", "guilds", "serverdata", "guilddata"]:
+      dataname = "server"
+    elif dataname in ["admins", "admindata"]:
+      dataname = "admin"
+    
+    str += f"\n{dataname} data:"
+    for id in data[dataname]:
+      str += f"\n{idtostr(id)}:"
+      for datapoint in data[dataname + "_default"]:
+        str += f"\n\t{datapoint} : {getdata(dataname, id, datapoint)}"
+  await client.get_user(userid).send(str)
+
+async def showadminsettings(userid, *settings):
+  if not settings:
+    settings = data["admin_default"].keys()
+  str = "current settings:"
+  for setting in settings:
+    str += f"\n{setting} - {getdata('admin', userid, setting)}"
+  await client.get_user(userid).send(str)
+
+async def toggleadminsettings(userid, *settings):
+  str = "toggled:"
+  for setting in settings:
+    current = getdata("admin", userid, setting)
+    setdata("admin", userid, setting, not current)
+    str += f"\n{setting} to {not current}"
+  storedata("admin")
+  await client.get_user(userid).send(str)
+
+async def showhelp(userid, *_):
+  str = '''available commands:
+help - display this message
+settings [s|s1 s2...| ] - show your admin settings (specific, multiple or blank for all)
+toggle [s|s1 s2...] - toggle 1 or more admin settings
+sync - sync bruhbot commands
+data [server|admin|all] - show data for servers/admins/all'''
+  await client.get_user(userid).send(str)
+
+async def addadmin(*userids):
+  for userid in userids:
+    data["admin"][int(userid)] = {}
+    await client.get_user(int(userid)).send("you are now an admin of bruhbot (aka a cool person), type !help in this DM for command info")
+  storedata("admin")
 
 admin_commands = {
-  "sync" : sync,
-  "data" : showdata
+  "sync" : sync, # make require exclamation point at start
+  "data" : showdata, # add help command
+  "settings" : showadminsettings,
+  "toggle" : toggleadminsettings,
+  "help" : showhelp
+  }
+superadmin_commands = {
+  "addadmin" : addadmin
   }
 #endregion
 
@@ -127,8 +212,12 @@ async def on_message(message: discord.Message):
   try:
     if message.author.id != client.user.id:
       if message.guild == None:
-        if message.author.id == Harvaria_id and message.content in admin_commands:
-          await admin_commands[message.content]()
+        if message.content.startswith('!'):
+          split = message.content[1:].split()
+          if message.author.id in data["admin"] and split[0] in admin_commands:
+            await admin_commands[split[0]](message.author.id, *split[1:])
+          elif message.author.id == Harvaria_id and split[0] in superadmin_commands:
+            await superadmin_commands[split[0]](*split[1:])
         else:
           await client.get_channel(bruhChannel_id).send(message.content)
       else:
@@ -140,7 +229,7 @@ async def on_message(message: discord.Message):
           msg: str = ""
           for mtn in message.mentions:
             msg += mtn.mention
-          for _ in range(getguilddata(message.guild.id, "pingdup")):
+          for _ in range(getdata("server", message.guild.id, "pingdup")):
             await message.channel.send(msg)
 
       #print(message.content)
@@ -151,11 +240,11 @@ async def on_message(message: discord.Message):
     except:
       channel = "this DM"
     errormessage = f"Error occured parsing message from {message.author.mention} in {channel}:\n{message.content}\n\n{traceback.format_exc()}"
-    await notify(errormessage)
+    await notify(getadmins("errors"), errormessage)
 
 @client.event
 async def on_guild_join(guild):
-  await notify(f"joined guild:\n{guildtostr(guild)}")
+  await notify(getadmins("joins"), f"joined guild:\n{guildtostr(guild)}")
   await sync()
 #endregion
 
@@ -203,10 +292,6 @@ def newinput(pipe, prompt):
   pipe.send(True)
   print(inp)
   return inp
-  # import time
-  # while not inputting.empty():
-  #   print("inputting...")
-  #   time.sleep(1)
 
 def tryexec(code, globals, locals):
   try:
@@ -365,8 +450,8 @@ async def setpingdup(interaction: discord.Interaction, number: int):
     if number > 3:
       await interaction.response.send_message("cannot be more than 3 (the bot will get rate-limited)", ephemeral = True)
       return
-    setguilddata(int(interaction.guild.id), "pingdup", number)
-    setdata()
+    setdata("server", int(interaction.guild.id), "pingdup", number)
+    storedata("server")
     printconsole(f"pingdup set to {number} for: {guildtostr(interaction.guild)}")
     await interaction.response.send_message(f"pingdup set to {number}", ephemeral = False)
   except:
@@ -502,7 +587,8 @@ async def translate(interaction: discord.Interaction, text : str, langfrom : str
 
 async def reportcommanderror(interaction : Interaction, traceback : str, **kwargs):
   errormessage = f"Error occured when {interaction.user.mention} ran command '{interaction.command.name}' in {interaction.channel.mention} with parameters {kwargs}:\n{traceback}"
-  await client.get_user(Harvaria_id).send(errormessage)
+  #await client.get_user(Harvaria_id).send(errormessage)
+  await notify(getadmins("errors"), errormessage)
   await interaction.response.send_message("An error occured\n...how did you break it this time :(", ephemeral = True)
 
 if __name__ == "__main__":
