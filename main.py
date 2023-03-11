@@ -578,6 +578,23 @@ async def translate(interaction: discord.Interaction, text : str, langfrom : str
     await reportcommanderror(interaction, traceback.format_exc(), text = text, langfrom = langfrom, langto = langto, hidden = hidden)
 #endregion
 
+#region cool command
+@tree.command(name = "amicool", description = "tells you if you're cool")
+async def amicool(interaction: discord.Interaction):
+  if interaction.user.id in data["admin"]:
+    await interaction.response.send_message("You are very cool :)")
+    message = await interaction.original_response()
+    await message.add_reaction('👍')
+    await message.add_reaction('😎')
+    await message.add_reaction('🙀')
+  else:
+    await interaction.response.send_message("You are not cool :(")
+    message = await interaction.original_response()
+    await message.add_reaction('😦')
+    await message.add_reaction('🙁')
+    await message.add_reaction('☹')
+#endregion
+
 #@tree.command(name = "name", description = "description")
 #async def name(interaction: discord.Interaction, *args):
 #  try:
