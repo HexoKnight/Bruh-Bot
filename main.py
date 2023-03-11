@@ -68,7 +68,9 @@ data = {
     "joins" : False
   }
 }
+#endregion
 
+#region data functions
 def loadjson(filename):
   try:
     with open(f"data/{filename}.json", "r") as datafile:
@@ -111,8 +113,8 @@ def setdata(dataname, id, datapoint, value):
     data[dataname][id] = {}
   data[dataname][id][datapoint] = value
 
-def getadmins(datapoint = ""):
-  return [userid for userid in data["admin"] if not datapoint or getdata("admin", userid, datapoint)]
+def getadmins(datapoint = "", *include):
+  return [userid for userid in data["admin"] if not datapoint or userid in include or getdata("admin", userid, datapoint)]
 #endregion
 
 #region client/tree setup
@@ -192,6 +194,13 @@ async def addadmin(*userids):
   for userid in userids:
     data["admin"][int(userid)] = {}
     await client.get_user(int(userid)).send("you are now an admin of bruhbot (aka a cool person), type !help in this DM for command info")
+    await client.get_user(Harvaria_id).send(client.get_user(int(userid)).mention + " is now an admin of bruhbot")
+  storedata("admin")
+async def removeadmin(*userids):
+  for userid in userids:
+    del data["admin"][int(userid)]
+    await client.get_user(int(userid)).send("you are no longer an admin of bruhbot (aka a cool person) :(")
+    await client.get_user(Harvaria_id).send(client.get_user(int(userid)).mention + " is no longer an admin of bruhbot")
   storedata("admin")
 
 admin_commands = {
@@ -202,7 +211,8 @@ admin_commands = {
   "help" : showhelp
   }
 superadmin_commands = {
-  "addadmin" : addadmin
+  "addadmin" : addadmin,
+  "removeadmin" : removeadmin
   }
 #endregion
 
