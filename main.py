@@ -217,8 +217,12 @@ async def showhelp(userid, *_):
 !help - display this message
 !settings [s|s1 s2...|all] - show your admin settings (specific/multiple/all)
 !toggle [s|s1 s2...] - toggle 1 or more admin settings
+!data [server|admin|all] - show data for servers/admins/all
 !sync - sync bruhbot commands
-!data [server|admin|all] - show data for servers/admins/all'''
+!restart - restart bruhbot
+!update - update bruhbot from github
+!suspend - suspend bruhbot (used to disable cloud bruhbot while a local one is being tested)
+!unsuspend - unsuspend bruhbot'''
   await client.get_user(userid).send(str)
 
 async def restart(userid, *_):
