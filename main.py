@@ -154,36 +154,58 @@ async def sync(userid, *_):
 async def showdata(userid, *datanames):
   if not datanames or datanames[0] == "all":
     datanames = [dataname for dataname in data if not dataname.endswith("_default")]
+  invalid = ""
   str = ""
   for dataname in datanames:
     if dataname in ["servers", "guild", "guilds", "serverdata", "guilddata"]:
       dataname = "server"
     elif dataname in ["admins", "admindata"]:
       dataname = "admin"
+    elif dataname not in data:
+      invalid += f"\ninvalid dataname - '{dataname}'"
+      continue
     
     str += f"\n{dataname} data:"
     for id in data[dataname]:
       str += f"\n{idtostr(id)}:"
       for datapoint in data[dataname + "_default"]:
         str += f"\n\t{datapoint} : {getdata(dataname, id, datapoint)}"
-  await client.get_user(userid).send(str)
+  if invalid:
+    await client.get_user(userid).send(invalid)
+  if str:
+    await client.get_user(userid).send(str)
 
 async def showadminsettings(userid, *settings):
-  if not settings:
+  if not settings or settings[0] == "all":
     settings = data["admin_default"].keys()
-  str = "current settings:"
+  invalid = ""
+  str = ""
   for setting in settings:
+    if setting not in data["admin_default"].keys():
+      invalid += f"\ninvalid setting - '{setting}'"
+      continue
     str += f"\n{setting} - {getdata('admin', userid, setting)}"
-  await client.get_user(userid).send(str)
+  if invalid:
+    await client.get_user(userid).send(invalid + "\nuse '!settings all' to see all valid settings")
+  if str:
+    await client.get_user(userid).send("current settings:" + str)
 
 async def toggleadminsettings(userid, *settings):
-  str = "toggled:"
+  invalid = ""
+  str = ""
   for setting in settings:
+    setting = setting.strip()
+    if setting not in data["admin_default"].keys():
+      invalid += f"\ninvalid setting - '{setting}'"
+      continue
     current = getdata("admin", userid, setting)
     setdata("admin", userid, setting, not current)
     str += f"\n{setting} to {not current}"
   storedata("admin")
-  await client.get_user(userid).send(str)
+  if invalid:
+    await client.get_user(userid).send(invalid + "\nuse '!settings all' to see all valid settings")
+  if str:
+    await client.get_user(userid).send("toggled:" + str)
 
 async def showhelp(userid, *_):
   str = '''available commands:
