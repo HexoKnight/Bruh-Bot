@@ -25,6 +25,8 @@ Harvaria_id = 571981658874445836
 intents = discord.Intents.all()
 
 bruhUses = {}
+suspended = False
+
 #region extra functions
 def idtostr(id):
   name = "unknown (probably error)"
@@ -69,7 +71,8 @@ data = {
     "errors" : False,
     "joins" : False,
     "restarts" : False,
-    "updates" : False
+    "updates" : False,
+    "suspensions" : False
   }
 }
 #endregion
@@ -226,6 +229,21 @@ async def update(userid, *_):
   subprocess.run(["git", "pull"], stdout = sys.stdout)
   await restart(userid, *_)
 
+async def suspend(userid, *_):
+  global suspended
+  if suspended:
+    await client.get_user(userid).send(userid, "already suspended!")
+  else:
+    suspended = True
+    await notify(getadmins("suspensions", userid), "suspended!")
+async def unsuspend(userid, *_):
+  global suspended
+  if suspended:
+    suspended = False
+    await notify(getadmins("suspensions", userid), "unsuspended!")
+  else:
+    await client.get_user(userid).send(userid, "not suspended!")
+
 async def addadmin(*userids):
   for userid in userids:
     data["admin"][int(userid)] = {}
@@ -246,7 +264,9 @@ admin_commands = {
   "toggle" : toggleadminsettings,
   "help" : showhelp,
   "restart" : restart,
-  "update" : update
+  "update" : update,
+  "suspend" : suspend,
+  "unsuspend" : unsuspend
   }
 superadmin_commands = {
   "addadmin" : addadmin,
@@ -262,13 +282,17 @@ async def on_message(message: discord.Message):
       if message.guild == None:
         if message.content.startswith('!'):
           split = message.content[1:].split()
-          if message.author.id in data["admin"] and split[0] in admin_commands:
-            await admin_commands[split[0]](message.author.id, *split[1:])
-          elif message.author.id == Harvaria_id and split[0] in superadmin_commands:
-            await superadmin_commands[split[0]](*split[1:])
-        else:
+          if suspended:
+            if message.author.id in data["admin"] and split[0] == "unsuspend":
+              await unsuspend(message.author.id, *split[1:])
+          else:
+            if message.author.id in data["admin"] and split[0] in admin_commands:
+              await admin_commands[split[0]](message.author.id, *split[1:])
+            elif message.author.id == Harvaria_id and split[0] in superadmin_commands:
+              await superadmin_commands[split[0]](*split[1:])
+        elif not suspended:
           await client.get_channel(bruhChannel_id).send(message.content)
-      else:
+      elif not suspended:
         if message.author.bot and message.author.name == "MEE6" and "GG" in message.content and "You've wasted a lot of your life!" in message.content:
           printconsole(message.mentions[0].name + " leveled up!")
           responses = ["very impressive", "most impressive", "waste of space", "wow", "nice", "very cool", "pathetic", "0/10, don't recommend", "eww"]
@@ -349,7 +373,8 @@ def tryexec(code, globals, locals):
       out.write("\n" + (str(e) if str(e) == "You took too long to respond" else traceback.format_exc()))
 
 async def runpython(interaction, code, secret = False):
-  from pathlib import Path
+  if suspended:
+    return
   Path("temp/out").mkdir(parents=True, exist_ok=True)
   setup = '__import__("sys").stdout = open("temp/out/" + str(__import__("os").getpid()) + ".out", "w")\ninput = lambda prompt="": __newinput__(__getinput__, prompt)\n'
   (pipe, otherpipe) = multiprocessing.Pipe(True)
@@ -460,6 +485,8 @@ class PollSelectView(discord.ui.View):
 @discord.app_commands.describe(options = "comma separated list of options")
 @discord.app_commands.describe(options = "(in seconds)")
 async def poll(interaction: discord.Interaction, options: str, timeout: int = 180):
+  if suspended:
+    return
   try:
     if dorandominsult():
       await sendrandominsult(interaction)
@@ -492,6 +519,8 @@ async def poll(interaction: discord.Interaction, options: str, timeout: int = 18
 #region pingdup
 @tree.command(name = "setpingdup", description = "change the number of times bruhbot repings a ping in this server (default is 0)")
 async def setpingdup(interaction: discord.Interaction, number: int):
+  if suspended:
+    return
   try:
     if number < 0:
       await interaction.response.send_message("cannot be less than 0 (how???)", ephemeral = True)
@@ -510,6 +539,8 @@ async def setpingdup(interaction: discord.Interaction, number: int):
 #region bruh
 @tree.command(name = "bruh", description = "bruh")
 async def bruh(interaction: discord.Interaction, length: int, secret: bool = False):
+  if suspended:
+    return
   try:
     aclength = length
     acsecret = secret
@@ -598,6 +629,8 @@ async def bruh(interaction: discord.Interaction, length: int, secret: bool = Fal
 #region msg_anon
 @tree.command(name = "msg_anon", description = "send a message anonomously")
 async def bruh(interaction: discord.Interaction, msg: str):
+  if suspended:
+    return
   try:
     await interaction.response.send_message("you can dismiss this :)", ephemeral = True)
     await interaction.channel.send(msg)
@@ -608,6 +641,8 @@ async def bruh(interaction: discord.Interaction, msg: str):
 #region translate
 @tree.command(name = "translate", description = "translate using google translate")
 async def translate(interaction: discord.Interaction, text : str, langfrom : str = "auto", langto : str = "en", hidden : bool = False):
+  if suspended:
+    return
   try:
     if dorandominsult():
       await sendrandominsult(interaction)
@@ -627,6 +662,8 @@ async def translate(interaction: discord.Interaction, text : str, langfrom : str
 #region cool command
 @tree.command(name = "amicool", description = "tells you if you're cool")
 async def amicool(interaction: discord.Interaction):
+  if suspended:
+    return
   if interaction.user.id in data["admin"]:
     await interaction.response.send_message("You are very cool :)")
     message = await interaction.original_response()
