@@ -45,6 +45,8 @@ def printconsole(str):
 
 async def notify(userids, str):
   printconsole(str)
+  await notifynoprint(userids, str)
+async def notifynoprint(userids, str):
   try:
     iterator = iter(userids)
   except:
@@ -226,9 +228,10 @@ async def restart(userid, *_):
 
 async def update(userid, *_):
   await notify(getadmins("updates", userid), "updating...")
-  output = subprocess.run(["git", "pull"], stdout = subprocess.PIPE, text = True).stdout
-  lastline = output.strip().split('\n')[-1].strip()
-  await notify(getadmins("updates", userid), f"> {lastline}")
+  output = subprocess.run(["git", "pull"], stdout = subprocess.PIPE, text = True).stdout.strip()
+  print(output)
+  lastline = output.split('\n')[-1]
+  await notifynoprint(getadmins("updates", userid), f"> {lastline.strip()}")
   await restart(userid, *_)
 
 async def suspend(userid, *_):
