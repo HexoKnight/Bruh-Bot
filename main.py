@@ -212,11 +212,11 @@ async def toggleadminsettings(userid, *settings):
 
 async def showhelp(userid, *_):
   str = '''available commands:
-help - display this message
-settings [s|s1 s2...| ] - show your admin settings (specific, multiple or blank for all)
-toggle [s|s1 s2...] - toggle 1 or more admin settings
-sync - sync bruhbot commands
-data [server|admin|all] - show data for servers/admins/all'''
+!help - display this message
+!settings [s|s1 s2...|all] - show your admin settings (specific/multiple/all)
+!toggle [s|s1 s2...] - toggle 1 or more admin settings
+!sync - sync bruhbot commands
+!data [server|admin|all] - show data for servers/admins/all'''
   await client.get_user(userid).send(str)
 
 async def restart(userid, *_):
