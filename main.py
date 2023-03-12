@@ -226,7 +226,9 @@ async def restart(userid, *_):
 
 async def update(userid, *_):
   await notify(getadmins("updates", userid), "updating...")
-  subprocess.run(["git", "pull"], stdout = sys.stdout)
+  output = subprocess.run(["git", "pull"], stdout = subprocess.PIPE, text = True).stdout
+  lastline = output.strip().split('\n')[-1].strip()
+  await notify(getadmins("updates", userid), f"> {lastline}")
   await restart(userid, *_)
 
 async def suspend(userid, *_):
