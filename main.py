@@ -49,7 +49,7 @@ async def notify(userids, str):
   await notifynoprint(userids, str)
 async def notifynoprint(userids, str):
   try:
-    iterator = iter(userids)
+    iterator = iter(set(userids))
   except:
     iterator = iter([userids])
   for userid in iterator:
@@ -190,7 +190,7 @@ class myclient(discord.Client):
       pass
     retrievedata("server")
     retrievedata("admin")
-    print(f"Successfully logged in as {self.user}.")
+    await notify(getadmins("restarts") + getadmins("updates"), f"Successfully logged in as {self.user}.")
     print(data)
 
 client = myclient()
