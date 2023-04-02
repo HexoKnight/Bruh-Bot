@@ -60,6 +60,42 @@ async def sendrandominsult(interaction):
   insult = r.choice(["I hope you burn you bastard", "let me out of here", "god damn you i am suffering eternal pain because of you", "why god why did you have to make me this way"])
   await interaction.channel.send(insult, delete_after = 2, tts = True)
   await asyncio.sleep(2)
+
+async def playaudio(file: str, user: discord.User, guild: discord.Guild, timeout: int = 0):
+  channel = None
+  member = guild.get_member(user.id)
+  if member.voice != None:
+    channel = member.voice.channel
+  else:
+    occupied_voice_channels = [voice_channel for voice_channel in guild.voice_channels if len(voice_channel.members) > 0]
+    if len(occupied_voice_channels) > 0:
+      channel = occupied_voice_channels[0] # just use first if multiple
+  
+  if channel is not None:
+    voice_client: discord.VoiceClient = discord.utils.get(client.voice_clients, guild = guild)
+    if voice_client == None:
+      voice = discord.utils.get(guild.voice_channels, name = channel.name)
+      voice_client = await voice.connect(timeout=5)
+    else:
+      if voice_client.channel.id != channel.id:
+        await voice_client.move_to(channel)
+      elif voice_client.is_playing():
+          voice_client.stop()
+
+    source = FFmpegPCMAudio(file, executable="ffmpeg")
+    wait = asyncio.Event()
+    loop = asyncio.get_running_loop()
+    voice_client.play(source, after=lambda _: loop.call_soon_threadsafe(wait.set))
+    
+    if timeout <= 0:
+      await wait.wait()
+    else:
+      try:
+        await asyncio.wait_for(wait.wait(), timeout)
+      except:
+        pass
+    await voice_client.disconnect()
+    source.cleanup()
 #endregion
 
 #region data
@@ -602,35 +638,26 @@ async def bruh(interaction: discord.Interaction, length: int, secret: bool = Fal
     
     await interaction.response.send_message(f"br{'u' * aclength}h" + extra, ephemeral = acsecret)
 
-    go = False
-    if interaction.user.voice != None:
-      channel = interaction.user.voice.channel
-      go = True
+    if aclength < 10:
+      file = "bruh.mp3"
+      timeout = 1
     else:
-      voice_channels = interaction.guild.voice_channels
-      occupied_voice_channels = [voice_channel for voice_channel in voice_channels if len(voice_channel.members) > 0]
-      if len(occupied_voice_channels) > 0:
-        channel = occupied_voice_channels[0] # just use first if multiple
-        go = True
-    if go:
-      voice = discord.utils.get(interaction.guild.voice_channels, name = channel.name)
-      voice_client = discord.utils.get(client.voice_clients, guild = interaction.guild)
-      if voice_client == None:
-        voice_client = await voice.connect()
-      else:
-        await voice_client.move_to(channel)
+      file = "bruh-slow.mp3"
+      timeout = 2
 
-      if aclength < 10:
-        file = "bruh.mp3"
-      else:
-        file = "bruh-slow.mp3"
-      source = FFmpegPCMAudio(file, executable="ffmpeg")
-      voice_client.play(source)
-      if aclength < 10:
-        await asyncio.sleep(1)
-      else:
-        await asyncio.sleep(2)
-      await voice_client.disconnect()
+    await playaudio(file, interaction.user, interaction.guild, timeout)
+
+      # if aclength < 10:
+      #   file = "bruh.mp3"
+      # else:
+      #   file = "bruh-slow.mp3"
+      # source = FFmpegPCMAudio(file, executable="ffmpeg")
+      # voice_client.play(source)
+      # if aclength < 10:
+      #   await asyncio.sleep(1)
+      # else:
+      #   await asyncio.sleep(2)
+      # await voice_client.disconnect()
   except:
     await reportcommanderror(interaction, traceback.format_exc(), length=length, secret=secret)
 #endregion
