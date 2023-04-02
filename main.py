@@ -91,7 +91,8 @@ async def playaudio(url: str, user: discord.User, guild: discord.Guild, timeout:
         url = info['formats'][0]['url']
     except:
       pass # evidently not youtube link so hopefully direct link
-    source = FFmpegPCMAudio(url, executable="ffmpeg")
+    FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
+    source = FFmpegPCMAudio(url, executable="ffmpeg", **FFMPEG_OPTIONS)
     wait = asyncio.Event()
     loop = asyncio.get_running_loop()
     voice_client.play(source, after=lambda _: loop.call_soon_threadsafe(wait.set))
