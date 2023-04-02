@@ -16,6 +16,8 @@ from pathlib import Path
 import subprocess
 
 from typing import Optional
+
+import youtube_dl
 #endregion
 
 TOKEN = "OTkxMjgxMzMzOTE5ODMwMDQ2.GCjxv3.bZweE0DTGyx2eSwDpyPYV9SrYEqK3HWZM8ZPMY"
@@ -59,8 +61,10 @@ async def sendrandominsult(interaction):
   insult = r.choice(["I hope you burn you bastard", "let me out of here", "god damn you i am suffering eternal pain because of you", "why god why did you have to make me this way"])
   await interaction.channel.send(insult, delete_after = 2, tts = True)
   await asyncio.sleep(2)
+#endregion
 
-async def playaudio(file: str, user: discord.User, guild: discord.Guild, timeout: int = 0):
+#region playaudio
+async def playaudio(url: str, user: discord.User, guild: discord.Guild, timeout: int = 0):
   channel = None
   member = guild.get_member(user.id)
   if member.voice != None:
@@ -81,7 +85,13 @@ async def playaudio(file: str, user: discord.User, guild: discord.Guild, timeout
       elif voice_client.is_playing():
           voice_client.stop()
 
-    source = FFmpegPCMAudio(file, executable="ffmpeg")
+    try:
+      with youtube_dl.YoutubeDL({'format': 'bestaudio'} ) as ydl:
+        info = ydl.extract_info(url, download=False)
+        url = info['formats'][0]['url']
+    except:
+      pass # evidently not youtube link so hopefully direct link
+    source = FFmpegPCMAudio(url, executable="ffmpeg")
     wait = asyncio.Event()
     loop = asyncio.get_running_loop()
     voice_client.play(source, after=lambda _: loop.call_soon_threadsafe(wait.set))

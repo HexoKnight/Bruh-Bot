@@ -2,3 +2,4 @@ git+https://github.com/Rapptz/discord.py (discord.py[voice])
 PyNaCl
 googletrans==3.1.0a0
 ffmpeg (or something??)
+youtube-dl
