@@ -14,6 +14,8 @@ import multiprocessing
 import shutil
 from pathlib import Path
 import subprocess
+
+from typing import Optional
 #endregion
 
 TOKEN = "OTkxMjgxMzMzOTE5ODMwMDQ2.GCjxv3.bZweE0DTGyx2eSwDpyPYV9SrYEqK3HWZM8ZPMY"
@@ -709,6 +711,26 @@ async def amicool(interaction: discord.Interaction):
     await message.add_reaction('😦')
     await message.add_reaction('🙁')
     await message.add_reaction('☹')
+#endregion
+
+#region play
+@tree.command(name = "play", description = "play audio file (20 minutes max but subject to change) (upload a file or enter a url)")
+@discord.app_commands.describe(file = "upload file")
+@discord.app_commands.describe(url = "enter url")
+async def play(interaction: discord.Interaction, file: Optional[discord.Attachment], url: str = None):
+  if suspended:
+    return
+  try:
+    if file is None and str is None:
+      await interaction.response.send_message(f"either upload a file or enter a url", ephemeral=True)
+      return
+    # if file.content_type not in ["audio", "video"]:
+    #   await interaction.response.send_message(f"not a valid audio source", ephemeral=True)
+    #   return
+    await interaction.response.send_message(f"playing '{file.filename if file is not None else url}' (for 20 minutes max)", ephemeral=False)
+    await playaudio(file.url if file is not None else url, interaction.user, interaction.guild, 60 * 20)
+  except:
+    await reportcommanderror(interaction, traceback.format_exc(), file = file) # fix not suspended
 #endregion
 
 #region tempping
