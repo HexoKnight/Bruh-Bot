@@ -3,7 +3,6 @@ import asyncio
 import math
 import discord
 from discord import FFmpegPCMAudio, Interaction, app_commands
-from discord.ext import commands
 import random as r
 import datetime
 import traceback
@@ -11,11 +10,9 @@ import googletrans
 import json
 
 import sys, os
-from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
 import shutil
 from pathlib import Path
-
 import subprocess
 #endregion
 
