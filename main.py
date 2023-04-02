@@ -64,7 +64,7 @@ async def sendrandominsult(interaction):
 #endregion
 
 #region playaudio
-async def playaudio(url: str, user: discord.User, guild: discord.Guild, timeout: int = 0):
+async def playaudio(url: str, user: discord.User, guild: discord.Guild):#, timeout: int = 0):
   channel = None
   member = guild.get_member(user.id)
   if member.voice != None:
@@ -82,30 +82,34 @@ async def playaudio(url: str, user: discord.User, guild: discord.Guild, timeout:
     else:
       if voice_client.channel.id != channel.id:
         await voice_client.move_to(channel)
-      elif voice_client.is_playing():
-          voice_client.stop()
+      elif voice_client.is_playing() and not voice_client.is_paused():
+        voice_client.stop()
 
     try:
-      with youtube_dl.YoutubeDL({'format': 'bestaudio'} ) as ydl:
+      with youtube_dl.YoutubeDL({'format': 'bestaudio'}) as ydl:
         info = ydl.extract_info(url, download=False)
         url = info['formats'][0]['url']
     except:
       pass # evidently not youtube link so hopefully direct link
     FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
     source = FFmpegPCMAudio(url, executable="ffmpeg", **FFMPEG_OPTIONS)
-    wait = asyncio.Event()
-    loop = asyncio.get_running_loop()
-    voice_client.play(source, after=lambda _: loop.call_soon_threadsafe(wait.set))
+    # wait = asyncio.Event()
+    # loop = asyncio.get_running_loop()
+
+    def wait():
+      voice_client.disconnect()
+
+    voice_client.play(source)#, after=lambda _: loop.call_soon_threadsafe(wait.set))
     
-    if timeout <= 0:
-      await wait.wait()
-    else:
-      try:
-        await asyncio.wait_for(wait.wait(), timeout)
-      except:
-        pass
-    await voice_client.disconnect()
-    source.cleanup()
+    # if timeout <= 0:
+    #   await wait.wait()
+    # else:
+    #   try:
+    #     await asyncio.wait_for(wait.wait(), timeout)
+    #   except:
+    #     pass
+    # #await voice_client.disconnect()
+    # source.cleanup()
 #endregion
 
 #region data
@@ -373,6 +377,14 @@ async def on_message(message: discord.Message):
 async def on_guild_join(guild):
   await notify(getadmins("joins"), f"joined guild:\n{guildtostr(guild)}")
   await sync()
+
+@client.event
+async def on_voice_state_update(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
+  voice_client: discord.VoiceClient = discord.utils.get(client.voice_clients, guild = member.guild)
+  if voice_client != None and before.channel is not None and before.channel.id == voice_client.channel.id and len(voice_client.channel.members) == 1:
+    await voice_client.stop()
+    await voice_client.cleanup()
+    await voice_client.disconnect()
 #endregion
 
 #region runpython
@@ -724,24 +736,88 @@ async def amicool(interaction: discord.Interaction):
     await message.add_reaction('☹')
 #endregion
 
+#region audio playing
 #region play
-@tree.command(name = "play", description = "play audio file (20 minutes max but subject to change) (upload a file or enter a url)")
+@tree.command(name = "play", description = "resume playing or play audio file (upload a file or enter a url)")
 @discord.app_commands.describe(file = "upload file")
 @discord.app_commands.describe(url = "enter url")
-async def play(interaction: discord.Interaction, file: Optional[discord.Attachment], url: str = None):
+async def play(interaction: discord.Interaction, file: Optional[discord.Attachment] = None, url: str = None):
   if suspended:
     return
   try:
-    if file is None and str is None:
-      await interaction.response.send_message(f"either upload a file or enter a url", ephemeral=True)
+    if file is None and url is None:
+      voice_client: discord.VoiceClient = discord.utils.get(client.voice_clients, guild = interaction.guild)
+      if voice_client == None or not (voice_client.is_playing() or voice_client.is_paused()):
+        await interaction.response.send_message(f"Nothing is playing!\neither upload a file or enter a url to start playing something new", ephemeral=True)
+      elif voice_client != None and voice_client.is_paused():
+        voice_client.resume()
+        await interaction.response.send_message(f"resumed playing", ephemeral=False)
+      elif voice_client != None and voice_client.is_playing():
+        await interaction.response.send_message(f"already playing something!\neither upload a file or enter a url to start playing something new", ephemeral=True)
       return
     # if file.content_type not in ["audio", "video"]:
     #   await interaction.response.send_message(f"not a valid audio source", ephemeral=True)
     #   return
-    await interaction.response.send_message(f"playing '{file.filename if file is not None else url}' (for 20 minutes max)", ephemeral=False)
-    await playaudio(file.url if file is not None else url, interaction.user, interaction.guild, 60 * 20)
+    await interaction.response.send_message(f"playing '{file.filename if file is not None else url}'", ephemeral=False)
+    await playaudio(file.url if file is not None else url, interaction.user, interaction.guild)
   except:
     await reportcommanderror(interaction, traceback.format_exc(), file = file) # fix not suspended
+#endregion
+
+#region pause
+@tree.command(name = "pause", description = "pause the currently playing audio")
+async def pause(interaction: discord.Interaction):
+  if suspended:
+    return
+  try:
+    voice_client: discord.VoiceClient = discord.utils.get(client.voice_clients, guild = interaction.guild)
+    if voice_client == None:
+      await interaction.response.send_message(f"not currently playing anything!", ephemeral=True)
+    elif voice_client.is_paused():
+      await interaction.response.send_message(f"already paused!", ephemeral=True)
+    else:
+      voice_client.pause()
+      await interaction.response.send_message(f"paused playing", ephemeral=False)
+  except:
+    await reportcommanderror(interaction, traceback.format_exc()) # fix not suspended
+#endregion
+
+#region stop
+@tree.command(name = "stop", description = "stop the currently playing audio")
+async def stop(interaction: discord.Interaction):
+  if suspended:
+    return
+  try:
+    voice_client: discord.VoiceClient = discord.utils.get(client.voice_clients, guild = interaction.guild)
+    if voice_client == None:
+      await interaction.response.send_message(f"not currently playing anything!", ephemeral=True)
+      return
+    voice_client.stop()
+    voice_client.cleanup()
+    await voice_client.disconnect()
+    await interaction.response.send_message(f"stopped audio", ephemeral=False)
+  except:
+    await reportcommanderror(interaction, traceback.format_exc()) # fix not suspended
+#endregion
+
+#region disconnect
+@tree.command(name = "disconnect", description = "disconnect bruhbot from vc")
+async def disconnect(interaction: discord.Interaction):
+  if suspended:
+    return
+  try:
+    voice_client: discord.VoiceClient = discord.utils.get(client.voice_clients, guild = interaction.guild)
+    if voice_client == None:
+      await interaction.response.send_message(f"not in vc!", ephemeral=True)
+      return
+    voice_client.stop()
+    voice_client.cleanup()
+    await voice_client.disconnect()
+    await interaction.response.send_message(f"disconnected bruhbot from vc", ephemeral=False)
+  except:
+    await reportcommanderror(interaction, traceback.format_exc()) # fix not suspended
+#endregion
+
 #endregion
 
 #region tempping
