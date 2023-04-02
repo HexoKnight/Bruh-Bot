@@ -64,7 +64,7 @@ async def sendrandominsult(interaction):
 #endregion
 
 #region playaudio
-async def playaudio(url: str, user: discord.User, guild: discord.Guild):#, timeout: int = 0):
+async def playaudio(url: str, user: discord.User, guild: discord.Guild, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'):#, timeout: int = 0):
   channel = None
   member = guild.get_member(user.id)
   if member.voice != None:
@@ -89,10 +89,11 @@ async def playaudio(url: str, user: discord.User, guild: discord.Guild):#, timeo
       with youtube_dl.YoutubeDL({'format': 'bestaudio'}) as ydl:
         info = ydl.extract_info(url, download=False)
         url = info['formats'][0]['url']
+      #FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
     except:
       pass # evidently not youtube link so hopefully direct link
-    FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
-    source = FFmpegPCMAudio(url, executable="ffmpeg", **FFMPEG_OPTIONS)
+
+    source = FFmpegPCMAudio(url, executable="ffmpeg", before_options=before_options, options='-vn')
     # wait = asyncio.Event()
     # loop = asyncio.get_running_loop()
 
@@ -667,7 +668,15 @@ async def bruh(interaction: discord.Interaction, length: int, secret: bool = Fal
       file = "bruh-slow.mp3"
       timeout = 2
 
-    await playaudio(file, interaction.user, interaction.guild, timeout)
+    await playaudio(file, interaction.user, interaction.guild, '')#, timeout)
+    if aclength < 10:
+      await asyncio.sleep(1)
+    else:
+      await asyncio.sleep(2)
+    
+    voice_client: discord.VoiceClient = discord.utils.get(client.voice_clients, guild = interaction.guild)
+    if voice_client != None and voice_client.is_connected():
+      await voice_client.disconnect()
 
       # if aclength < 10:
       #   file = "bruh.mp3"
