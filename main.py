@@ -20,7 +20,7 @@ from typing import Optional
 import youtube_dl
 #endregion
 
-TOKEN = "OTkxMjgxMzMzOTE5ODMwMDQ2.GCjxv3.bZweE0DTGyx2eSwDpyPYV9SrYEqK3HWZM8ZPMY"
+TOKEN = Path("TOKEN").read_text().strip()
 bruhChannel_id = 991363080720220230
 Harvaria_id = 571981658874445836
 intents = discord.Intents.all()
