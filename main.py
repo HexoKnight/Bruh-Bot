@@ -125,6 +125,7 @@ data = {
     "joins" : False,
     "restarts" : False,
     "updates" : False,
+    "syncs" : False,
     "suspensions" : False
   }
 }
@@ -199,13 +200,13 @@ tree = app_commands.CommandTree(client)
 
 #region admin commands
 async def sync(userid, *_):
-  await notify(userid, "syncing...")
+  await notify(getadmins("syncs", userid), "syncing...")
   for guild in client.guilds:
-    await notify(userid, guildtostr(guild))
+    await notify(getadmins("syncs", userid), guildtostr(guild))
     tree.copy_global_to(guild = guild)
     await tree.sync(guild = guild)
   retrievedata("server")
-  await notify(userid, "synced!")
+  await notify(getadmins("syncs", userid), "synced!")
 
 async def showdata(userid, *datanames):
   if not datanames or datanames[0] == "all":
