@@ -843,6 +843,17 @@ async def amicool(interaction: discord.Interaction, member: discord.Member, time
     await reportcommanderror(interaction, traceback.format_exc(), member = member, time = time)
 #endregion
 
+#region advertise
+@tree.command(name = "advertise", description = "advertises")
+async def advertise(interaction: discord.Interaction):
+  if suspended:
+    return
+  try:
+    await interaction.response.send_message("https://coolgames.harvey8.repl.co/\nhttps://github.com/Harvey-G\n:) get advertised noobs", ephemeral = False)
+  except:
+    await reportcommanderror(interaction, traceback.format_exc())
+#endregion
+
 #@tree.command(name = "name", description = "description")
 #async def name(interaction: discord.Interaction, *args):
 #  try:
