@@ -323,6 +323,7 @@ admin_commands = {
   "data" : showdata,
   "settings" : showadminsettings,
   "toggle" : toggleadminsettings,
+  "togglesettings" : toggleadminsettings,
   "help" : showhelp,
   "restart" : restart,
   "update" : update,
