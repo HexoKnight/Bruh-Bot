@@ -25,6 +25,8 @@ bruhChannel_id = 991363080720220230
 Harvaria_id = 571981658874445836
 intents = discord.Intents.all()
 
+insults = ["I hope you burn you bastard", "let me out of here", "god damn you i am suffering eternal pain because of you", "why god why did you have to make me this way"]
+
 bruhUses = {}
 suspended = False
 last_try_sync = None
@@ -59,7 +61,7 @@ async def notifynoprint(userids, str):
 def dorandominsult():
   return r.randint(1,20) == 1
 async def sendrandominsult(interaction):
-  insult = r.choice(["I hope you burn you bastard", "let me out of here", "god damn you i am suffering eternal pain because of you", "why god why did you have to make me this way"])
+  insult = r.choice(insults)
   await interaction.channel.send(insult, delete_after = 2, tts = True)
   await asyncio.sleep(2)
 #endregion
