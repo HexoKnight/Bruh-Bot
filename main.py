@@ -830,17 +830,17 @@ async def disconnect(interaction: discord.Interaction):
 #endregion
 
 #region tempping
-# @tree.command(name = "tempping", description = "pings temporarily")
-# async def amicool(interaction: discord.Interaction, member: discord.Member):
-#   if suspended:
-#     return
-#   try:
-#     if member not in interaction.guild.members:
-#       await interaction.response.send_message("specified user is not in this server", ephemeral = True)
-#     await interaction.response.send_message("done 👍", ephemeral = True)
-#     await interaction.guild.send("done 👍", delete_after = 5)
-#   except:
-#     await reportcommanderror(interaction, traceback.format_exc(), member = member)
+@tree.command(name = "tempping", description = "pings temporarily")
+async def amicool(interaction: discord.Interaction, member: discord.Member, time: int = 1):
+  if suspended:
+    return
+  try:
+    if member not in interaction.guild.members:
+      await interaction.response.send_message("specified user is not in this server", ephemeral = True)
+    await interaction.channel.send(member.mention, delete_after = time)
+    await interaction.response.send_message("done 👍", ephemeral = True)
+  except:
+    await reportcommanderror(interaction, traceback.format_exc(), member = member, time = time)
 #endregion
 
 #@tree.command(name = "name", description = "description")
