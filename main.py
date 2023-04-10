@@ -27,6 +27,7 @@ intents = discord.Intents.all()
 
 bruhUses = {}
 suspended = False
+last_try_sync = None
 
 #region extra functions
 def idtostr(id):
@@ -388,6 +389,12 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
     await voice_client.stop()
     await voice_client.cleanup()
     await voice_client.disconnect()
+
+@tree.error
+async def on_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
+  await reportcommanderror(interaction, traceback.format_exc())
+  if last_try_sync == None or (datetime.datetime.now() - last_try_sync).seconds > 600: # only try to sync max once every 10 minutes
+    await sync(None)
 #endregion
 
 #region runpython
@@ -864,7 +871,10 @@ async def advertise(interaction: discord.Interaction):
 #    await reportcommanderror(interaction, traceback.format_exc(), args = args)
 
 async def reportcommanderror(interaction : Interaction, traceback : str, **kwargs):
-  errormessage = f"Error occured when {interaction.user.mention} ran command '{interaction.command.name}' in {interaction.channel.mention} with parameters {kwargs}:\n{traceback}"
+  if interaction.command == None:
+    errormessage = f"Error occured when {interaction.user.mention} ran an unknown command in {interaction.channel.mention}:\n{traceback}"
+  else:
+    errormessage = f"Error occured when {interaction.user.mention} ran command '{interaction.command.name}' in {interaction.channel.mention} with parameters {kwargs}:\n{traceback}"
   #await client.get_user(Harvaria_id).send(errormessage)
   await notify(getadmins("errors"), errormessage)
   await interaction.response.send_message("An error occured\n...how did you break it this time :(", ephemeral = True)
