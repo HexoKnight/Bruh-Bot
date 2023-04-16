@@ -842,7 +842,7 @@ async def disconnect(interaction: discord.Interaction):
 
 #region tempping
 @tree.command(name = "tempping", description = "pings temporarily")
-async def amicool(interaction: discord.Interaction, member: discord.Member, time: int = 1):
+async def tempping(interaction: discord.Interaction, member: discord.Member, time: int = 1):
   if suspended:
     return
   try:
