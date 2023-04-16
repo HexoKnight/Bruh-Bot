@@ -848,8 +848,9 @@ async def tempping(interaction: discord.Interaction, member: discord.Member, tim
   try:
     if member not in interaction.guild.members:
       await interaction.response.send_message("specified user is not in this server", ephemeral = True)
-    await interaction.channel.send(member.mention, delete_after = time)
-    await interaction.response.send_message("done 👍", ephemeral = True)
+    await interaction.response.send_message(member.mention, ephemeral = False, delete_after = time)
+    # await interaction.response.send_message("done 👍", ephemeral = True)
+    # await interaction.response.defer()
   except:
     await reportcommanderror(interaction, traceback.format_exc(), member = member, time = time)
 #endregion
