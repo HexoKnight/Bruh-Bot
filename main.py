@@ -879,7 +879,13 @@ async def reportcommanderror(interaction : Interaction, traceback : str, **kwarg
     errormessage = f"Error occured when {interaction.user.mention} ran command '{interaction.command.name}' in {interaction.channel.mention} with parameters {kwargs}:\n{traceback}"
   #await client.get_user(Harvaria_id).send(errormessage)
   await notify(getadmins("errors"), errormessage)
-  await interaction.response.send_message("An error occured\n...how did you break it this time :(", ephemeral = True)
+
+  message = "An error occured\n...how did you break it this time :("
+  if not interaction.response.is_done():
+    await interaction.response.send_message(message, ephemeral = True)
+  else:
+    original = await interaction.original_response()
+    await interaction.edit_original_response(content = original.content + "\n\n" + message)
 
 if __name__ == "__main__":
   client.run(TOKEN)
