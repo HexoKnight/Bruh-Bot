@@ -1,4 +1,4 @@
-git+https://github.com/Rapptz/discord.py (discord.py[voice])
+discord.py[voice] #git+https://github.com/Rapptz/discord.py (discord.py[voice])
 PyNaCl
 googletrans==3.1.0a0
 # ffmpeg (or something??) (actually not the python module just the cmd tool)
