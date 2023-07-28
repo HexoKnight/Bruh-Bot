@@ -22,7 +22,7 @@ import youtube_dl
 
 TOKEN = Path("TOKEN").read_text().strip()
 bruhChannel_id = 991363080720220230
-Harvaria_id = 571981658874445836
+SuperAdmin = 571981658874445836 # hexoknight8
 intents = discord.Intents.all()
 
 insults = ["I hope you burn you bastard", "let me out of here", "god damn you i am suffering eternal pain because of you", "why god why did you have to make me this way"]
@@ -312,13 +312,13 @@ async def addadmin(*userids):
   for userid in userids:
     data["admin"][int(userid)] = {}
     await client.get_user(int(userid)).send("you are now an admin of bruhbot (aka a cool person), type !help in this DM for command info")
-    await client.get_user(Harvaria_id).send(client.get_user(int(userid)).mention + " is now an admin of bruhbot")
+    await client.get_user(SuperAdmin).send(client.get_user(int(userid)).mention + " is now an admin of bruhbot")
   storedata("admin")
 async def removeadmin(*userids):
   for userid in userids:
     del data["admin"][int(userid)]
     await client.get_user(int(userid)).send("you are no longer an admin of bruhbot (aka a cool person) :(")
-    await client.get_user(Harvaria_id).send(client.get_user(int(userid)).mention + " is no longer an admin of bruhbot")
+    await client.get_user(SuperAdmin).send(client.get_user(int(userid)).mention + " is no longer an admin of bruhbot")
   storedata("admin")
 
 admin_commands = {
@@ -353,7 +353,7 @@ async def on_message(message: discord.Message):
           else:
             if message.author.id in data["admin"] and split[0] in admin_commands:
               await admin_commands[split[0]](message.author.id, *split[1:])
-            elif message.author.id == Harvaria_id and split[0] in superadmin_commands:
+            elif message.author.id == SuperAdmin and split[0] in superadmin_commands:
               await superadmin_commands[split[0]](*split[1:])
         elif not suspended:
           await client.get_channel(bruhChannel_id).send(message.content)
