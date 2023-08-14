@@ -291,6 +291,14 @@ async def update(userid, *_):
   print(output)
   lastline = output.split('\n')[-1]
   await notifynoprint(getadmins("updates", userid), f"> {lastline.strip()}")
+
+  if sys.platform.startswith('win'):
+    os.system("pip install -r requirements.txt | findstr -v \"already satisfied\"")
+  elif sys.platform.startswith('linux'):
+    os.system("pip install -r requirements.txt | grep -v 'already satisfied'")
+  else:
+    os.system("pip install -r requirements.txt")
+    
   await restart(userid, *_)
 
 async def suspend(userid, *_):
