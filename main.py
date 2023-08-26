@@ -194,7 +194,7 @@ class myclient(discord.Client):
       pass
     retrievedata("server")
     retrievedata("admin")
-    await notify(getadmins("restarts") + getadmins("updates"), f"Successfully logged in as {self.user}.")
+    # await notify(getadmins("restarts") + getadmins("updates"), f"Successfully logged in as {self.user}.")
     print(data)
 
 client = myclient()
