@@ -275,7 +275,7 @@ async def showhelp(userid, *_):
 !data [server|admin|all] - show data for servers/admins/all
 !sync - sync bruhbot commands
 !restart - restart bruhbot
-!update - update bruhbot from github
+!update - update bruhbot from the github repo
 !suspend - suspend bruhbot (used to disable cloud bruhbot while a local one is being tested)
 !unsuspend - unsuspend bruhbot'''
   await client.get_user(userid).send(str)
