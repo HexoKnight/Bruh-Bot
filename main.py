@@ -869,7 +869,7 @@ async def advertise(interaction: discord.Interaction):
   if suspended:
     return
   try:
-    await interaction.response.send_message("https://coolgames.harvey8.repl.co/\nhttps://github.com/Harvey-G\n:) get advertised noobs", ephemeral = False)
+    await interaction.response.send_message("https://HexoKnight.github.io\n:) get advertised noobs", ephemeral = False)
   except:
     await reportcommanderror(interaction, traceback.format_exc())
 #endregion
