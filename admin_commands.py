@@ -93,8 +93,18 @@ async def update(userid, *_):
   await notify(getadmins("updates", userid), "updating...")
   output = subprocess.run(["git", "pull"], stdout = subprocess.PIPE, text = True).stdout.strip()
   print(output)
-  lastline = output.split('\n')[-1]
-  await notifynoprint(getadmins("updates", userid), f"> {lastline.strip()}")
+  merge_output = []
+  merge = False
+  for line in output.split('\n'):
+    if merge:
+      merge_output += line
+      if "files changed" in line:
+        break
+    elif "Updating" in line:
+      merge_output += line
+      merge = True
+  # lastline = output.split('\n')[-1]
+  await notifynoprint(getadmins("updates", userid), "> " + "\n> ".join(merge_output))
 
   if sys.platform.startswith('win'):
     os.system("pip install -r requirements.txt | findstr -v \"already satisfied\"")
