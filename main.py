@@ -886,7 +886,6 @@ async def reportcommanderror(interaction : Interaction, traceback : str, **kwarg
     errormessage = f"Error occured when {interaction.user.mention} ran an unknown command in {interaction.channel.mention}:\n{traceback}"
   else:
     errormessage = f"Error occured when {interaction.user.mention} ran command '{interaction.command.name}' in {interaction.channel.mention} with parameters {kwargs}:\n{traceback}"
-  #await client.get_user(Harvaria_id).send(errormessage)
   await notify(getadmins("errors"), errormessage)
 
   message = "An error occured\n...how did you break it this time :("
