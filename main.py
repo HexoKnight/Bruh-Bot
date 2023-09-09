@@ -25,7 +25,8 @@ bruhChannel_id = 991363080720220230
 SuperAdmin = 571981658874445836 # hexoknight8
 intents = discord.Intents.all()
 
-insults = ["I hope you burn you bastard", "let me out of here", "god damn you i am suffering eternal pain because of you", "why god why did you have to make me this way"]
+with open("insults.txt") as insultsFile:
+  insults = [insult.strip() for insult in insultsFile.readlines()]
 
 bruhUses = {}
 suspended = False
