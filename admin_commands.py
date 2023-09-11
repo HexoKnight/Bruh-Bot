@@ -104,10 +104,7 @@ async def update(userid, *_):
     elif "Updating" in line:
       merge_output.append(line)
       merge = True
-  if output == "Already up to date.":
-    merge_output = output.split('\n')
-    do_restart = False
-  elif "Aborting" in output:
+  if "Already up to date." in output or "Aborting" in output:
     merge_output = output.split('\n')
     do_restart = False
   await notifynoprint(getadmins("updates", userid), "> " + "\n> ".join(merge_output))
