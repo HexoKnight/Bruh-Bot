@@ -93,6 +93,7 @@ async def update(userid, *_):
   await notify(getadmins("updates", userid), "updating...")
   output = subprocess.run(["git", "pull"], stdout = subprocess.PIPE, text = True).stdout.strip()
   print(output)
+  do_restart = True
   merge_output = []
   merge = False
   for line in output.split('\n'):
@@ -103,7 +104,12 @@ async def update(userid, *_):
     elif "Updating" in line:
       merge_output.append(line)
       merge = True
-  # lastline = output.split('\n')[-1]
+  if output == "Already up to date.":
+    merge_output = output.split('\n')
+    do_restart = False
+  elif "Aborting" in output:
+    merge_output = output.split('\n')
+    do_restart = False
   await notifynoprint(getadmins("updates", userid), "> " + "\n> ".join(merge_output))
 
   if sys.platform.startswith('win'):
@@ -112,8 +118,9 @@ async def update(userid, *_):
     os.system("pip install -r requirements.txt | grep -v 'already satisfied'")
   else:
     os.system("pip install -r requirements.txt")
-    
-  await restart(userid, *_)
+  
+  if do_restart:
+    await restart(userid, *_)
 
 async def suspend(userid, *_):
   global suspended
