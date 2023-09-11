@@ -97,11 +97,11 @@ async def update(userid, *_):
   merge = False
   for line in output.split('\n'):
     if merge:
-      merge_output += line
+      merge_output.append(line)
       if "files changed" in line:
         break
     elif "Updating" in line:
-      merge_output += line
+      merge_output.append(line)
       merge = True
   # lastline = output.split('\n')[-1]
   await notifynoprint(getadmins("updates", userid), "> " + "\n> ".join(merge_output))
