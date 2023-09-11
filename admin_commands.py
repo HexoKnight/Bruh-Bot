@@ -2,7 +2,7 @@ import asyncio
 import sys, os
 import subprocess
 
-from __main__ import tree, SuperAdmin
+from __main__ import tree, SuperAdmin, suspended
 from __main__ import idtostr, notify, notifynoprint, guildtostr
 from data import *
 
