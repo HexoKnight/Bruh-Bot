@@ -91,39 +91,49 @@ async def restart(userid, *_):
   future.add_done_callback(lambda _: os.execv(sys.executable, [sys.executable] + sys.argv))
 
 async def update(userid, *params):
+  force = "force" in params or "f" in params
   await notify(getadmins("updates", userid), "updating...")
-  if "force" in params or "f" in params:
-    await notify(getadmins("updates", userid), "hard reseting repo...")
-    subprocess.run(["git", "reset", "--hard"])
-  git_pull_process = subprocess.run(["git", "pull"], capture_output = True, text = True)
-  output = git_pull_process.stdout.strip()
-  error = git_pull_process.stderr.strip()
-  if error != "":
-    output += "\n" + error
-  print(output)
+  subprocess.run(["git", "fetch"])
+  if force:
+    await notify(getadmins("updates", userid), "hard reseting repo to remote...")
+    update_process = subprocess.run(["git", "reset", "--hard", "origin/main"], capture_output = True, text = True)
+  else:
+    update_process = subprocess.run(["git", "merge"], capture_output = True, text = True)
+  process_output = update_process.stdout.strip()
+  process_error = update_process.stderr.strip()
+  if process_error != "":
+    process_output += "\n" + process_error
+  print(process_output)
   do_restart = True
   allow_force = False
-  merge_output = []
-  merge = False
-  for line in output.split('\n'):
-    if merge:
-      merge_output.append(line)
-      if "files changed" in line or "file changed" in line:
-        break
-    elif "Updating" in line:
-      merge_output.append(line)
-      merge = True
-  if "Already up to date." in output:
-    merge_output = output.split('\n')
-    do_restart = False
-  elif "aborting" in output.lower():
-    merge_output = output.split('\n')
+  if force:
+    update_output = process_output.split('\n')
+  elif process_output.strip().count == 0 or "aborting" in process_output.lower():
+    update_output = process_output.split('\n')
     do_restart = False
     allow_force = True
+  elif "Already up to date." in process_output:
+    update_output = process_output.split('\n')
+    do_restart = False
+  else:
+    update_output = []
+    merge = False
+    for line in process_output.split('\n'):
+      if merge:
+        update_output.append(line)
+        if "files changed" in line or "file changed" in line:
+          break
+      elif "Updating" in line:
+        update_output.append(line)
+        merge = True
+    if len(update_output) == 0:
+      update_output = process_output.split('\n')
+      do_restart = False
+      allow_force = True
   
-  message = "> " + "\n> ".join(merge_output)
+  message = "> " + "\n> ".join(update_output)
   if allow_force:
-    message += "\n use `!update force` to `git reset --hard` the repo to force an update"
+    message += "\nuse `!update force` to `git reset --hard origin/main` the repo to force an update"
   await notifynoprint(getadmins("updates", userid), message)
 
   if sys.platform.startswith('win'):
