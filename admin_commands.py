@@ -93,7 +93,7 @@ async def restart(userid, *_):
 async def update(userid, *params):
   force = "force" in params or "f" in params
   await notify(getadmins("updates", userid), "updating...")
-  subprocess.run(["git", "fetch"])
+  os.system("git fetch")
   if force:
     await notify(getadmins("updates", userid), "hard reseting repo to remote...")
     update_process = subprocess.run(["git", "reset", "--hard", "origin/main"], capture_output = True, text = True)
