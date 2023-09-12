@@ -103,7 +103,7 @@ async def update(userid, *_):
   for line in output.split('\n'):
     if merge:
       merge_output.append(line)
-      if "files changed" in line:
+      if "files changed" in line or "file changed" in line:
         break
     elif "Updating" in line:
       merge_output.append(line)
