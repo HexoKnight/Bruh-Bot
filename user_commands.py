@@ -182,7 +182,7 @@ class PollSelectView(discord.ui.View):
 
 @tree.command(name = "poll", description = "create a poll (default length is 3 minutes)")
 @discord.app_commands.describe(options = "comma separated list of options")
-@discord.app_commands.describe(options = "(in seconds)")
+@discord.app_commands.describe(timeout = "(in seconds)")
 async def poll(interaction: discord.Interaction, options: str, timeout: int = 180):
   if main.suspended:
     return
