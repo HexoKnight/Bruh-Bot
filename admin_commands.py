@@ -2,8 +2,9 @@ import asyncio
 import sys, os
 import subprocess
 
-from __main__ import tree, SuperAdmin, suspended
+from __main__ import tree, SuperAdmin
 from __main__ import idtostr, notify, notifynoprint, guildtostr
+import __main__ as main
 from data import *
 
 async def sync(userid, *_):
@@ -124,19 +125,17 @@ async def update(userid, *_):
     await restart(userid, *_)
 
 async def suspend(userid, *_):
-  global suspended
-  if suspended:
+  if main.suspended:
     await client.get_user(userid).send("already suspended!")
   else:
-    suspended = True
+    main.suspended = True
     await notify(getadmins("suspensions", userid), "suspended!")
 async def unsuspend(userid, *_):
-  global suspended
-  if suspended:
-    suspended = False
+  if main.suspended:
+    main.suspended = False
     await notify(getadmins("suspensions", userid), "unsuspended!")
   else:
-    await client.get_user(userid).send(userid, "not suspended!")
+    await client.get_user(userid).send("not suspended!")
 
 async def addadmin(*userids):
   for userid in userids:

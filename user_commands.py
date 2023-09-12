@@ -13,8 +13,9 @@ from pathlib import Path
 from typing import Optional
 #endregion
 
-from __main__ import client, tree, bruhUses, suspended
+from __main__ import client, tree
 from __main__ import dorandominsult, sendrandominsult, reportcommanderror, printconsole, guildtostr
+import __main__ as main
 from data import *
 from audio import playaudio
 
@@ -71,7 +72,7 @@ def tryexec(code, globals, locals):
       out.write("\n" + (str(e) if str(e) == "You took too long to respond" else traceback.format_exc()))
 
 async def runpython(interaction, code, secret = False):
-  if suspended:
+  if main.suspended:
     return
   Path("temp/out").mkdir(parents=True, exist_ok=True)
   setup = '__import__("sys").stdout = open("temp/out/" + str(__import__("os").getpid()) + ".out", "w")\ninput = lambda prompt="": __newinput__(__getinput__, prompt)\n'
@@ -183,7 +184,7 @@ class PollSelectView(discord.ui.View):
 @discord.app_commands.describe(options = "comma separated list of options")
 @discord.app_commands.describe(options = "(in seconds)")
 async def poll(interaction: discord.Interaction, options: str, timeout: int = 180):
-  if suspended:
+  if main.suspended:
     return
   try:
     if dorandominsult():
@@ -217,7 +218,7 @@ async def poll(interaction: discord.Interaction, options: str, timeout: int = 18
 #region pingdup
 @tree.command(name = "setpingdup", description = "change the number of times bruhbot repings a ping in this server (default is 0)")
 async def setpingdup(interaction: discord.Interaction, number: int):
-  if suspended:
+  if main.suspended:
     return
   try:
     if number < 0:
@@ -237,7 +238,7 @@ async def setpingdup(interaction: discord.Interaction, number: int):
 #region bruh
 @tree.command(name = "bruh", description = "bruh")
 async def bruh(interaction: discord.Interaction, length: int, secret: bool = False):
-  if suspended:
+  if main.suspended:
     return
   try:
     aclength = length
@@ -250,11 +251,11 @@ async def bruh(interaction: discord.Interaction, length: int, secret: bool = Fal
       extra += "\nlimited to 1000 or the bot breaks :/"
 
     if not acsecret:
-      if interaction.user.id in bruhUses and (timeElapsed := datetime.datetime.now() - bruhUses[interaction.user.id]["time"]).seconds < bruhUses[interaction.user.id]["delay"]:
-        bruhUses[interaction.user.id]["num"] += 1
-        num = bruhUses[interaction.user.id]["num"]
+      if interaction.user.id in main.bruhUses and (timeElapsed := datetime.datetime.now() - main.bruhUses[interaction.user.id]["time"]).seconds < main.bruhUses[interaction.user.id]["delay"]:
+        main.bruhUses[interaction.user.id]["num"] += 1
+        num = main.bruhUses[interaction.user.id]["num"]
         acsecret = True
-        extra += f"\ncooldown due to spam : {'%.2f' % (bruhUses[interaction.user.id]['delay'] - timeElapsed.seconds)}s"
+        extra += f"\ncooldown due to spam : {'%.2f' % (main.bruhUses[interaction.user.id]['delay'] - timeElapsed.seconds)}s"
         if num > 1:
           extra += "\n"
           if num > 7:
@@ -273,16 +274,16 @@ async def bruh(interaction: discord.Interaction, length: int, secret: bool = Fal
               extra += "but it still makes the sound :) "
             extra += ")"
       else:
-        if interaction.user.id not in bruhUses:
-          bruhUses[interaction.user.id] = {"time" : datetime.datetime.now(), "delay" : 0, "num" : 0}
-        if interaction.user.id in bruhUses and bruhUses[interaction.user.id]["delay"] == 0:
-          bruhUses[interaction.user.id]["num"] += 1
+        if interaction.user.id not in main.bruhUses:
+          main.bruhUses[interaction.user.id] = {"time" : datetime.datetime.now(), "delay" : 0, "num" : 0}
+        if interaction.user.id in main.bruhUses and main.bruhUses[interaction.user.id]["delay"] == 0:
+          main.bruhUses[interaction.user.id]["num"] += 1
 
         delay = (math.log(aclength + 1) ** 2) + 10
         maxtimesbeforespam = (((60 - delay) / 50) ** 6) * 5
 
-        if bruhUses[interaction.user.id]["num"] >= maxtimesbeforespam:
-          bruhUses[interaction.user.id] = {"time" : datetime.datetime.now(), "delay" : delay, "num" : 0}
+        if main.bruhUses[interaction.user.id]["num"] >= maxtimesbeforespam:
+          main.bruhUses[interaction.user.id] = {"time" : datetime.datetime.now(), "delay" : delay, "num" : 0}
     else:
       extra += "\nonly you can see this but it still makes the sound :)"
 
@@ -326,7 +327,7 @@ async def bruh(interaction: discord.Interaction, length: int, secret: bool = Fal
 #region msg_anon
 @tree.command(name = "msg_anon", description = "send a message anonomously")
 async def bruh(interaction: discord.Interaction, msg: str):
-  if suspended:
+  if main.suspended:
     return
   try:
     await interaction.response.send_message("you can dismiss this :)", ephemeral = True)
@@ -338,7 +339,7 @@ async def bruh(interaction: discord.Interaction, msg: str):
 #region translate
 @tree.command(name = "translate", description = "translate using google translate")
 async def translate(interaction: discord.Interaction, text : str, langfrom : str = "auto", langto : str = "en", hidden : bool = False):
-  if suspended:
+  if main.suspended:
     return
   try:
     if dorandominsult():
@@ -359,7 +360,7 @@ async def translate(interaction: discord.Interaction, text : str, langfrom : str
 #region cool command
 @tree.command(name = "amicool", description = "tells you if you're cool")
 async def amicool(interaction: discord.Interaction):
-  if suspended:
+  if main.suspended:
     return
   if interaction.user.id in data["admin"]:
     await interaction.response.send_message("You are very cool :)")
@@ -381,7 +382,7 @@ async def amicool(interaction: discord.Interaction):
 @discord.app_commands.describe(file = "upload file")
 @discord.app_commands.describe(url = "enter url")
 async def play(interaction: discord.Interaction, file: Optional[discord.Attachment] = None, url: str = None):
-  if suspended:
+  if main.suspended:
     return
   try:
     if file is None and url is None:
@@ -400,13 +401,13 @@ async def play(interaction: discord.Interaction, file: Optional[discord.Attachme
     await interaction.response.send_message(f"playing '{file.filename if file is not None else url}'", ephemeral=False)
     await playaudio(file.url if file is not None else url, interaction.user, interaction.guild)
   except:
-    await reportcommanderror(interaction, traceback.format_exc(), file = file) # fix not suspended
+    await reportcommanderror(interaction, traceback.format_exc(), file = file) # fix not main.suspended
 #endregion
 
 #region pause
 @tree.command(name = "pause", description = "pause the currently playing audio")
 async def pause(interaction: discord.Interaction):
-  if suspended:
+  if main.suspended:
     return
   try:
     voice_client: discord.VoiceClient = discord.utils.get(client.voice_clients, guild = interaction.guild)
@@ -418,13 +419,13 @@ async def pause(interaction: discord.Interaction):
       voice_client.pause()
       await interaction.response.send_message(f"paused playing", ephemeral=False)
   except:
-    await reportcommanderror(interaction, traceback.format_exc()) # fix not suspended
+    await reportcommanderror(interaction, traceback.format_exc()) # fix not main.suspended
 #endregion
 
 #region stop
 @tree.command(name = "stop", description = "stop the currently playing audio")
 async def stop(interaction: discord.Interaction):
-  if suspended:
+  if main.suspended:
     return
   try:
     voice_client: discord.VoiceClient = discord.utils.get(client.voice_clients, guild = interaction.guild)
@@ -436,13 +437,13 @@ async def stop(interaction: discord.Interaction):
     await voice_client.disconnect()
     await interaction.response.send_message(f"stopped audio", ephemeral=False)
   except:
-    await reportcommanderror(interaction, traceback.format_exc()) # fix not suspended
+    await reportcommanderror(interaction, traceback.format_exc()) # fix not main.suspended
 #endregion
 
 #region disconnect
 @tree.command(name = "disconnect", description = "disconnect bruhbot from vc")
 async def disconnect(interaction: discord.Interaction):
-  if suspended:
+  if main.suspended:
     return
   try:
     voice_client: discord.VoiceClient = discord.utils.get(client.voice_clients, guild = interaction.guild)
@@ -454,7 +455,7 @@ async def disconnect(interaction: discord.Interaction):
     await voice_client.disconnect()
     await interaction.response.send_message(f"disconnected bruhbot from vc", ephemeral=False)
   except:
-    await reportcommanderror(interaction, traceback.format_exc()) # fix not suspended
+    await reportcommanderror(interaction, traceback.format_exc()) # fix not main.suspended
 #endregion
 
 #endregion
@@ -462,7 +463,7 @@ async def disconnect(interaction: discord.Interaction):
 #region tempping
 @tree.command(name = "tempping", description = "pings temporarily")
 async def tempping(interaction: discord.Interaction, member: discord.Member, time: int = 1):
-  if suspended:
+  if main.suspended:
     return
   try:
     if member not in interaction.guild.members:
@@ -477,7 +478,7 @@ async def tempping(interaction: discord.Interaction, member: discord.Member, tim
 #region advertise
 @tree.command(name = "advertise", description = "advertises")
 async def advertise(interaction: discord.Interaction):
-  if suspended:
+  if main.suspended:
     return
   try:
     await interaction.response.send_message("https://HexoKnight.github.io\n:) get advertised noobs", ephemeral = False)
