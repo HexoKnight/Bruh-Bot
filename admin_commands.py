@@ -91,7 +91,11 @@ async def restart(userid, *_):
 
 async def update(userid, *_):
   await notify(getadmins("updates", userid), "updating...")
-  output = subprocess.run(["git", "pull"], stdout = subprocess.PIPE, text = True).stdout.strip()
+  git_pull_process = subprocess.run(["git", "pull"], capture_output = True, text = True)
+  output = git_pull_process.stdout.strip()
+  error = git_pull_process.stderr.strip()
+  if error != "":
+    output += "\n" + error
   print(output)
   do_restart = True
   merge_output = []
