@@ -134,7 +134,7 @@ async def update(userid, *params):
     os.system("pip install -r requirements.txt")
   
   if do_restart:
-    await restart(userid, *_)
+    await restart(userid)
 
 async def suspend(userid, *_):
   if main.suspended:
