@@ -90,8 +90,11 @@ async def restart(userid, *_):
   future = asyncio.run_coroutine_threadsafe(client.close(), asyncio.get_event_loop())
   future.add_done_callback(lambda _: os.execv(sys.executable, [sys.executable] + sys.argv))
 
-async def update(userid, *_):
+async def update(userid, *params):
   await notify(getadmins("updates", userid), "updating...")
+  if "force" in params or "f" in params:
+    await notify(getadmins("updates", userid), "hard reseting repo...")
+    subprocess.run(["git", "reset", "--hard"])
   git_pull_process = subprocess.run(["git", "pull"], capture_output = True, text = True)
   output = git_pull_process.stdout.strip()
   error = git_pull_process.stderr.strip()
@@ -99,6 +102,7 @@ async def update(userid, *_):
     output += "\n" + error
   print(output)
   do_restart = True
+  allow_force = False
   merge_output = []
   merge = False
   for line in output.split('\n'):
@@ -109,10 +113,18 @@ async def update(userid, *_):
     elif "Updating" in line:
       merge_output.append(line)
       merge = True
-  if "Already up to date." in output or "Aborting" in output:
+  if "Already up to date." in output:
     merge_output = output.split('\n')
     do_restart = False
-  await notifynoprint(getadmins("updates", userid), "> " + "\n> ".join(merge_output))
+  elif "Aborting" in output:
+    merge_output = output.split('\n')
+    do_restart = False
+    allow_force = True
+  
+  message = "> " + "\n> ".join(merge_output)
+  if allow_force:
+    message += "\n use `!update force` to `git reset --hard` the repo to force an update"
+  await notifynoprint(getadmins("updates", userid), message)
 
   if sys.platform.startswith('win'):
     os.system("pip install -r requirements.txt | findstr -v \"already satisfied\"")
