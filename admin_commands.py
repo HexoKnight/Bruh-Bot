@@ -126,7 +126,7 @@ async def update(userid, *_):
 async def suspend(userid, *_):
   global suspended
   if suspended:
-    await client.get_user(userid).send(userid, "already suspended!")
+    await client.get_user(userid).send("already suspended!")
   else:
     suspended = True
     await notify(getadmins("suspensions", userid), "suspended!")
