@@ -116,7 +116,7 @@ async def update(userid, *params):
   if "Already up to date." in output:
     merge_output = output.split('\n')
     do_restart = False
-  elif "Aborting" in output:
+  elif "aborting" in output.lower():
     merge_output = output.split('\n')
     do_restart = False
     allow_force = True
