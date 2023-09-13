@@ -3,3 +3,4 @@ PyNaCl
 googletrans==3.1.0a0
 # ffmpeg (or something??) (actually not the python module just the cmd tool)
 youtube-dl
+parsedatetime

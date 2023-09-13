@@ -5,12 +5,14 @@ import discord
 import datetime
 import traceback
 import googletrans
-
 import os
 import multiprocessing
 from pathlib import Path
-
 from typing import Optional
+import parsedatetime
+from datetime import datetime
+from calendar import timegm
+from discord import app_commands
 #endregion
 
 from __main__ import client, tree
@@ -482,6 +484,33 @@ async def advertise(interaction: discord.Interaction):
     return
   try:
     await interaction.response.send_message("https://HexoKnight.github.io\n:) get advertised noobs", ephemeral = False)
+  except:
+    await reportcommanderror(interaction, traceback.format_exc())
+#endregion
+
+#region timestamp
+@tree.command(name = "timestamp", description = "creates a timestamp... at UTC so either adjust or use relative time (eg. 'in 2 hours')")
+@app_commands.choices(style=[
+        app_commands.Choice(name="Relative Time", value="R"),
+        app_commands.Choice(name="Short Time", value="t"),
+        app_commands.Choice(name="Long Time", value="T"),
+        app_commands.Choice(name="Short Date", value="d"),
+        app_commands.Choice(name="Long Date", value="D"),
+        app_commands.Choice(name="Short Date/Time", value="f"),
+        app_commands.Choice(name="Long Date/Time", value="F")
+    ])
+async def timestamp(interaction: discord.Interaction, time: str, style: app_commands.Choice[str] = None):
+  if main.suspended:
+    return
+  try:
+    cal = parsedatetime.Calendar() # using default settings
+    (struct_time, result) = cal.parseDT(time, interaction.created_at)
+    if result == 0:
+      await interaction.response.send_message("invalid time :(", ephemeral = True)
+      return
+    epochsecs = timegm(struct_time.timetuple())
+    timestamp = f"<t:{epochsecs}:{'R' if style == None else style.value}>" # TEST!!!!!!!!!
+    await interaction.response.send_message(f"```{timestamp}```preview: {timestamp}", ephemeral = True)
   except:
     await reportcommanderror(interaction, traceback.format_exc())
 #endregion
