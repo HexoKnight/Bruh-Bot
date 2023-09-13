@@ -72,19 +72,6 @@ async def toggleadminsettings(userid, *settings):
   if str:
     await client.get_user(userid).send("toggled:" + str)
 
-async def showhelp(userid, *_):
-  str = '''available commands:
-!help - display this message
-!settings [s|s1 s2...|all] - show your admin settings (specific/multiple/all)
-!toggle [s|s1 s2...] - toggle 1 or more admin settings
-!data [server|admin|all] - show data for servers/admins/all
-!sync - sync bruhbot commands
-!restart - restart bruhbot
-!update - update bruhbot from the github repo
-!suspend - suspend bruhbot (used to disable cloud bruhbot while a local one is being tested)
-!unsuspend - unsuspend bruhbot'''
-  await client.get_user(userid).send(str)
-
 async def restart(userid, *_):
   await notify(getadmins("restarts", userid), "restarting...")
   future = asyncio.run_coroutine_threadsafe(client.close(), asyncio.get_event_loop())
@@ -171,6 +158,19 @@ async def removeadmin(*userids):
     await client.get_user(int(userid)).send("you are no longer an admin of bruhbot (aka a cool person) :(")
     await client.get_user(SuperAdmin).send(client.get_user(int(userid)).mention + " is no longer an admin of bruhbot")
   storedata("admin")
+
+async def showhelp(userid, *_):
+  str = '''available commands:
+!help - display this message
+!settings [s|s1 s2...|all] - show your admin settings (specific/multiple/all)
+!toggle [s|s1 s2...] - toggle 1 or more admin settings
+!data [server|admin|all] - show data for servers/admins/all
+!sync - sync bruhbot commands
+!restart - restart bruhbot
+!update - update bruhbot from the github repo
+!suspend - suspend bruhbot (used to disable cloud bruhbot while a local one is being tested)
+!unsuspend - unsuspend bruhbot'''
+  await client.get_user(userid).send(str)
 
 admin_commands = {
   "sync" : sync,
