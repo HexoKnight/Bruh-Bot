@@ -98,7 +98,7 @@ async def update(userid, *params):
     await notify(getadmins("updates", userid), "hard reseting repo to remote...")
     update_process = subprocess.run(["git", "reset", "--hard", "origin/main"], capture_output = True, text = True)
   else:
-    update_process = subprocess.run(["git", "merge"], capture_output = True, text = True)
+    update_process = subprocess.run(["git", "merge", "--ff-only"], capture_output = True, text = True)
   process_output = update_process.stdout.strip()
   process_error = update_process.stderr.strip()
   if process_error != "":
