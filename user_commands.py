@@ -490,6 +490,8 @@ async def advertise(interaction: discord.Interaction):
 
 #region timestamp
 @tree.command(name = "timestamp", description = "creates a timestamp... at UTC so either adjust or use relative time (eg. 'in 2 hours')")
+@discord.app_commands.describe(time = "eg. 'in 4 hours', 'in 2h1m5s', 'tomorrow 8:45:00' (absolute time zones are UTC so adjust accordingly!!!)")
+@discord.app_commands.describe(style = "the display format of the timestamp")
 @app_commands.choices(style=[
         app_commands.Choice(name="Relative Time", value="R"),
         app_commands.Choice(name="Short Time", value="t"),
