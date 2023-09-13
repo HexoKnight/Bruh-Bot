@@ -133,7 +133,7 @@ async def update(userid, *params):
   
   message = "```\n" + "\n".join(update_output) + "\n```"
   if allow_force:
-    message += "\nuse `!update force` to `git reset --hard origin/main` the repo to force an update"
+    message += "use `!update force` to `git reset --hard origin/main` the repo to force an update"
   await notifynoprint(getadmins("updates", userid), message)
 
   if sys.platform.startswith('win'):
